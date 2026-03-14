@@ -1,9 +1,9 @@
 import { ref } from 'vue'
 
 export function useRetirementInputs() {
-  const currentAge = ref(35)
-  const currentCash = ref(300)
-  const monthlySave = ref(3)
+  const currentAge = ref(30)
+  const currentCash = ref(100)
+  const monthlySave = ref(2)
   const endAge = ref(85)
   const eBase = ref(48)
   const eExtra = ref(20)

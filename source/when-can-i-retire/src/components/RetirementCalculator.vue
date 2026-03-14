@@ -31,7 +31,11 @@ const result = useRetirementCalc(inputs);
     <InfoCards v-if="result.retireDetails" :details="result.retireDetails" />
 
     <!-- Chart -->
-    <RetirementChart :data="result.data" :retire-age="result.retireAge" />
+    <RetirementChart
+      :data="result.data"
+      :retire-age="result.retireAge"
+      :inflation="inputs.inflation.value"
+      :current-age="inputs.currentAge.value" />
 
     <!-- Sliders: top row -->
     <div class="grid-2">
@@ -45,7 +49,7 @@ const result = useRetirementCalc(inputs);
           unit=" 歲" />
         <SliderInput
           v-model="inputs.currentCash.value"
-          label="當前現金（存款）"
+          label="當前現金"
           :min="0"
           :max="3000"
           :step="10"
@@ -53,14 +57,14 @@ const result = useRetirementCalc(inputs);
           :format="fmtMoney" />
         <SliderInput
           v-model="inputs.monthlySave.value"
-          label="每月存款"
+          label="每月存款（名目）"
           :min="0"
           :max="20"
           :step="0.5"
           unit=" 萬" />
         <SliderInput
           v-model="inputs.rSave.value"
-          label="儲蓄期投資報酬率"
+          label="儲蓄期實質報酬率"
           :min="0"
           :max="16"
           :step="0.5"
@@ -77,21 +81,21 @@ const result = useRetirementCalc(inputs);
           unit=" 歲" />
         <SliderInput
           v-model="inputs.eBase.value"
-          label="每年基本開支 (以實質購買力計算)"
+          label="每年基本開支（實質購買力）"
           :min="12"
           :max="120"
           :step="2"
           unit=" 萬" />
         <SliderInput
           v-model="inputs.eExtra.value"
-          label="每年額外花費 (以實質購買力計算)"
+          label="每年額外花費（實質購買力）"
           :min="0"
           :max="60"
           :step="2"
           unit=" 萬" />
         <SliderInput
           v-model="inputs.pension.value"
-          label="年金收入 (以實質購買力計算)"
+          label="年金收入（實質購買力）"
           :min="0"
           :max="60"
           :step="2"
