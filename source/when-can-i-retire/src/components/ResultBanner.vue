@@ -13,12 +13,16 @@ defineProps<{
     <div class="banner-age">{{ retireAge }}<span class="banner-unit"> 歲</span></div>
     <div class="banner-info">
       還需 <span class="hl">{{ retireDetails.yearsToRetire }}</span> 年 ・
-      退休後每年實質花費 <span class="hl">{{ retireDetails.totalAnnualSpend }}</span> 萬
+      退休後每年花費 <span class="hl">{{ retireDetails.totalAnnualSpend }}</span> 萬（實質購買力）
     </div>
   </div>
   <div v-else class="banner banner--fail">
-    <div class="banner-warn">⚠ 目前條件下無法在 70 歲前退休</div>
-    <div class="banner-hint">請嘗試增加存款、降低開支或調整預期壽命</div>
+    <div class="banner-subtitle">最早可退休年齡</div>
+    <div class="banner-age">-<span class="banner-unit"> 歲</span></div>
+    <div class="banner-info">
+      還需 <span class="hl">-</span> 年 ・
+      退休後每年花費 <span class="hl">-</span> 萬（實質購買力）
+    </div>
   </div>
 </template>
 

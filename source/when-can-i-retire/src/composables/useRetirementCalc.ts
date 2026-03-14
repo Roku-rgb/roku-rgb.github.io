@@ -53,11 +53,13 @@ export function useRetirementCalc(inputs: CalcInputs) {
     const data = [];
     let retireAge: number | null = null;
 
-    for (
-      let age = inputs.currentAge.value;
-      age <= Math.min(inputs.endAge.value, 70);
-      age++
-    ) {
+    // 最大年齡限制 (動態調整計算範圍)
+    let maxAge = Math.min(inputs.endAge.value, 70);
+    if (inputs.currentAge.value > 65) {
+      maxAge = Math.min(inputs.endAge.value, 100);
+    }
+
+    for (let age = inputs.currentAge.value; age <= maxAge; age++) {
       const k = age - inputs.currentAge.value;
       const assets = futureValue(
         inputs.currentCash.value,

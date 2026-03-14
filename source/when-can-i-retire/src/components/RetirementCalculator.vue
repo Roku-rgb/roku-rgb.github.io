@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import {
   useRetirementCalc,
   defaultInputs,
@@ -15,6 +15,16 @@ import SliderGroup from "./SliderGroup.vue";
 const inputs = defaultInputs();
 const result = useRetirementCalc(inputs);
 const isNominal = ref(true);
+
+// 目前年齡超過規劃活到時，強制將規劃活到設成目前年齡+1
+watch(
+  () => inputs.currentAge.value,
+  (age) => {
+    if (age >= inputs.endAge.value) {
+      inputs.endAge.value = age + 1;
+    }
+  },
+);
 </script>
 
 <template>
@@ -33,7 +43,6 @@ const isNominal = ref(true);
 
     <!-- Info Cards -->
     <InfoCards
-      v-if="result.retireDetails"
       :details="result.retireDetails"
       :inflation="inputs.inflation.value"
       :current-age="inputs.currentAge.value"
@@ -54,7 +63,7 @@ const isNominal = ref(true);
           v-model="inputs.currentAge.value"
           label="目前年齡"
           :min="20"
-          :max="65"
+          :max="99"
           :step="1"
           unit=" 歲" />
         <SliderInput
@@ -85,7 +94,7 @@ const isNominal = ref(true);
         <SliderInput
           v-model="inputs.endAge.value"
           label="規劃活到"
-          :min="70"
+          :min="Math.max(70, inputs.currentAge.value + 1)"
           :max="100"
           :step="1"
           unit=" 歲" />
@@ -110,12 +119,6 @@ const isNominal = ref(true);
           :max="60"
           :step="2"
           unit=" 萬/年" />
-      </SliderGroup>
-    </div>
-
-    <!-- Sliders: bottom row -->
-    <div class="grid-3">
-      <SliderGroup title="利率假設" color="#a78bfa">
         <SliderInput
           v-model="inputs.pensionAge.value"
           label="年金起領年齡"
@@ -123,6 +126,12 @@ const isNominal = ref(true);
           :max="70"
           :step="1"
           unit=" 歲" />
+      </SliderGroup>
+    </div>
+
+    <!-- Sliders: bottom row -->
+    <div class="grid-3">
+      <SliderGroup title="利率假設" color="#a78bfa">
         <SliderInput
           v-model="inputs.inflation.value"
           label="預估通膨率"

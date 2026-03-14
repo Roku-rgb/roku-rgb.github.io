@@ -1,31 +1,38 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { RetireDetails } from '../types/retirement'
+import { computed } from "vue";
+import type { RetireDetails } from "../types/retirement";
 
 const props = defineProps<{
-  details: RetireDetails
-  inflation: number
-  currentAge: number
-  isNominal: boolean
-}>()
+  details: RetireDetails | null;
+  inflation: number;
+  currentAge: number;
+  isNominal: boolean;
+}>();
 
 const emit = defineEmits<{
-  'update:isNominal': [value: boolean]
-}>()
-
-const factor = computed(() => {
-  const k = props.details.age - props.currentAge
-  return Math.pow(1 + props.inflation / 100, k)
-})
+  "update:isNominal": [value: boolean];
+}>();
 
 const display = computed(() => {
-  const f = props.isNominal ? factor.value : 1
-  return {
-    lmp: Math.round(props.details.lmp * f),
-    rp: Math.round(props.details.rp * f),
-    assets: Math.round(props.details.assets * f),
+  if (!props.details) {
+    return {
+      lmp: "-",
+      rp: "-",
+      assets: "-",
+    };
+  } else {
+    let f = 1;
+    if (props.isNominal) {
+      const k = props.details.age - props.currentAge;
+      f = Math.pow(1 + props.inflation / 100, k);
+    }
+    return {
+      lmp: Math.round(props.details.lmp * f),
+      rp: Math.round(props.details.rp * f),
+      assets: Math.round(props.details.assets * f),
+    };
   }
-})
+});
 </script>
 
 <template>
@@ -33,11 +40,23 @@ const display = computed(() => {
     <div class="block-header">
       <div class="block-title">
         退休所需資金
-        <span class="block-unit">（單位：萬元，{{ isNominal ? '名目' : '實質購買力' }}）</span>
+        <span class="block-unit"
+          >（單位：萬元，{{ isNominal ? "名目" : "實質購買力" }}）</span
+        >
       </div>
       <div class="toggle-group">
-        <button class="toggle-btn" :class="{ active: isNominal }" @click="emit('update:isNominal', true)">名目</button>
-        <button class="toggle-btn" :class="{ active: !isNominal }" @click="emit('update:isNominal', false)">實質購買力</button>
+        <button
+          class="toggle-btn"
+          :class="{ active: isNominal }"
+          @click="emit('update:isNominal', true)">
+          名目
+        </button>
+        <button
+          class="toggle-btn"
+          :class="{ active: !isNominal }"
+          @click="emit('update:isNominal', false)">
+          實質購買力
+        </button>
       </div>
     </div>
     <div class="cards">
@@ -115,7 +134,11 @@ const display = computed(() => {
   flex-wrap: wrap;
 }
 .card {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+  background: linear-gradient(
+    135deg,
+    rgba(30, 41, 59, 0.9),
+    rgba(15, 23, 42, 0.95)
+  );
   border: 1px solid color-mix(in srgb, var(--card-color) 20%, transparent);
   border-radius: 12px;
   padding: 16px 18px;
@@ -129,13 +152,13 @@ const display = computed(() => {
   margin-bottom: 4px;
   letter-spacing: 0.8px;
   text-transform: uppercase;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "DM Sans", sans-serif;
 }
 .card-value {
   font-size: 28px;
   font-weight: 800;
   color: var(--card-color);
-  font-family: 'Space Mono', monospace;
+  font-family: "Space Mono", monospace;
   line-height: 1.1;
 }
 .card-sub {
