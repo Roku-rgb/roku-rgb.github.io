@@ -12,6 +12,7 @@ export function useRetirementInputs() {
   const rLmp = ref(1.5)
   const rRp = ref(6)
   const rSave = ref(5)
+  const inflation = ref(2)
 
   return {
     currentAge,
@@ -25,5 +26,6 @@ export function useRetirementInputs() {
     rLmp,
     rRp,
     rSave,
+    inflation,
   }
 }

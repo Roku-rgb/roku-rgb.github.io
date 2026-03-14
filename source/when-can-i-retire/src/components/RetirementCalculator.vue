@@ -52,6 +52,7 @@ const result = useRetirementCalc(inputs)
     <div class="grid-3">
       <SliderGroup title="利率假設" color="#a78bfa">
         <SliderInput v-model="inputs.pensionAge.value" label="年金起領年齡" :min="55" :max="70" :step="1" unit=" 歲" />
+        <SliderInput v-model="inputs.inflation.value" label="預估通膨率" :min="0" :max="6" :step="0.5" unit="%" />
       </SliderGroup>
       <SliderGroup title="&nbsp;" color="#a78bfa">
         <SliderInput v-model="inputs.rLmp.value" label="TIPS 實質殖利率（LMP）" :min="0" :max="4" :step="0.1" unit="%" />
@@ -69,6 +70,9 @@ const result = useRetirementCalc(inputs)
       :e-extra="inputs.eExtra.value"
       :pension="inputs.pension.value"
       :pension-age="inputs.pensionAge.value"
+      :end-age="inputs.endAge.value"
+      :current-age="inputs.currentAge.value"
+      :inflation="inputs.inflation.value"
       :r-lmp="inputs.rLmp.value"
       :r-rp="inputs.rRp.value"
     />
