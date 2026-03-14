@@ -155,6 +155,7 @@ const isNominal = ref(true);
     <BreakdownTable
       v-if="result.retireDetails"
       :details="result.retireDetails"
+      :chart-data="result.data"
       :e-base="inputs.eBase.value"
       :e-extra="inputs.eExtra.value"
       :pension="inputs.pension.value"
@@ -163,7 +164,8 @@ const isNominal = ref(true);
       :current-age="inputs.currentAge.value"
       :inflation="inputs.inflation.value"
       :r-lmp="inputs.rLmp.value"
-      :r-rp="inputs.rRp.value" />
+      :r-rp="inputs.rRp.value"
+      v-model:is-nominal="isNominal" />
 
     <!-- Footer -->
     <div class="footer">本工具僅供參考，不構成投資建議</div>
