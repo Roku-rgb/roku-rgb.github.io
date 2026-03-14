@@ -8,7 +8,6 @@ import { fmtMoney } from "../utils/format";
 import ResultBanner from "./ResultBanner.vue";
 import InfoCards from "./InfoCards.vue";
 import RetirementChart from "./RetirementChart.vue";
-import BreakdownTable from "./BreakdownTable.vue";
 import SliderInput from "./SliderInput.vue";
 import SliderGroup from "./SliderGroup.vue";
 
@@ -160,21 +159,7 @@ watch(
       </SliderGroup>
     </div>
 
-    <!-- Breakdown Table -->
-    <BreakdownTable
-      v-if="result.retireDetails"
-      :details="result.retireDetails"
-      :chart-data="result.data"
-      :e-base="inputs.eBase.value"
-      :e-extra="inputs.eExtra.value"
-      :pension="inputs.pension.value"
-      :pension-age="inputs.pensionAge.value"
-      :end-age="inputs.endAge.value"
-      :current-age="inputs.currentAge.value"
-      :inflation="inputs.inflation.value"
-      :r-lmp="inputs.rLmp.value"
-      :r-rp="inputs.rRp.value"
-      v-model:is-nominal="isNominal" />
+    <!-- Withdrawal Table -->
 
     <!-- Footer -->
     <div class="footer">本工具僅供參考，不構成投資建議</div>
