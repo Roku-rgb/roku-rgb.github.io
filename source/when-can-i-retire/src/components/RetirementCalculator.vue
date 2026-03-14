@@ -11,6 +11,7 @@ import InfoCards from "./InfoCards.vue";
 import RetirementChart from "./RetirementChart.vue";
 import WithdrawChart from "./WithdrawChart.vue";
 import WithdrawTable from "./WithdrawTable.vue";
+import PmtCalculator from "./PmtCalculator.vue";
 import SliderInput from "./SliderInput.vue";
 import SliderGroup from "./SliderGroup.vue";
 
@@ -189,6 +190,9 @@ watch(
       :inflation="inputs.inflation.value"
       :current-age="inputs.currentAge.value"
       v-model:is-nominal="isNominal" />
+
+    <!-- PMT Calculator -->
+    <PmtCalculator />
 
     <!-- Footer -->
     <div class="footer">本工具僅供參考，不構成投資建議</div>
