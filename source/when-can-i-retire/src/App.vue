@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
+import RetirementCalculator from './components/RetirementCalculator.vue'
 </script>
 
 <template>
-  <HelloWorld />
+  <RetirementCalculator />
 </template>
