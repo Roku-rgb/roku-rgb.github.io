@@ -138,7 +138,7 @@ const chartOptions = computed(() => ({
         title: (items: { dataIndex: number }[]) => {
           const idx = items[0]?.dataIndex;
           if (idx === undefined) return "";
-          return `${displayData.value[idx].age} 歲`;
+          return `${displayData.value[idx].age} 歲 (年末)`;
         },
         label: (item: { datasetIndex: number; dataIndex: number }) => {
           const d = displayData.value[item.dataIndex];

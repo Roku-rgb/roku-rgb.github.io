@@ -1,19 +1,35 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, computed, watch } from "vue";
 import {
   useRetirementCalc,
   defaultInputs,
 } from "../composables/useRetirementCalc";
+import { useWithdrawSchedule } from "../composables/useWithdrawSchedule";
 import { fmtMoney } from "../utils/format";
 import ResultBanner from "./ResultBanner.vue";
 import InfoCards from "./InfoCards.vue";
 import RetirementChart from "./RetirementChart.vue";
+import WithdrawChart from "./WithdrawChart.vue";
+import WithdrawTable from "./WithdrawTable.vue";
 import SliderInput from "./SliderInput.vue";
 import SliderGroup from "./SliderGroup.vue";
 
 const inputs = defaultInputs();
 const result = useRetirementCalc(inputs);
 const isNominal = ref(true);
+
+const withdrawRows = useWithdrawSchedule({
+  retireAge: computed(() => result.value.retireAge),
+  endAge: inputs.endAge,
+  eBase: inputs.eBase,
+  eExtra: inputs.eExtra,
+  pension: inputs.pension,
+  pensionAge: inputs.pensionAge,
+  rLmp: inputs.rLmp,
+  rRp: inputs.rRp,
+  lmpAtRetire: computed(() => result.value.retireDetails?.lmp ?? 0),
+  rpAtRetire: computed(() => result.value.retireDetails?.rp ?? 0),
+});
 
 // 目前年齡超過規劃活到時，強制將規劃活到設成目前年齡+1
 watch(
@@ -159,7 +175,20 @@ watch(
       </SliderGroup>
     </div>
 
-    <!-- Withdrawal Table -->
+    <!-- Withdraw Chart -->
+    <WithdrawChart
+      :rows="withdrawRows"
+      :inflation="inputs.inflation.value"
+      :current-age="inputs.currentAge.value"
+      :retire-age="result.retireAge"
+      :is-nominal="isNominal" />
+
+    <!-- Withdraw Table -->
+    <WithdrawTable
+      :rows="withdrawRows"
+      :inflation="inputs.inflation.value"
+      :current-age="inputs.currentAge.value"
+      :is-nominal="isNominal" />
 
     <!-- Footer -->
     <div class="footer">本工具僅供參考，不構成投資建議</div>

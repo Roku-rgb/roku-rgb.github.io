@@ -38,18 +38,22 @@ export const calcLMP = (
   rLmp: number,
 ): number => {
   if (retireAge >= endAge) return 0;
-  if (retireAge < pensionAge) {
-    const n1 = Math.min(pensionAge, endAge) - retireAge;
-    const n2 = Math.max(0, endAge - pensionAge);
-    const pv1 = annuityPV(eBase, rLmp, n1);
+  // 提領從 retireAge+1 開始（先提領、後成長 = annuity-due）
+  // annuity-due PV = ordinary annuity PV × (1+r)
+  // n1: 全額支出年數（retireAge+1 ~ pensionAge-1）
+  // n2: 減額支出年數（pensionAge ~ endAge）
+  if (retireAge + 1 < pensionAge) {
+    const n1 = Math.max(0, Math.min(pensionAge, endAge + 1) - retireAge - 1);
+    const n2 = Math.max(0, endAge - pensionAge + 1);
+    const pv1 = annuityPV(eBase, rLmp, n1) * (1 + rLmp);
     const gap = Math.max(0, eBase - pension);
-    const pv2at = annuityPV(gap, rLmp, n2);
+    const pv2at = annuityPV(gap, rLmp, n2) * (1 + rLmp);
     const pv2 = pv2at / Math.pow(1 + rLmp, n1);
     return pv1 + pv2;
   } else {
     const n = endAge - retireAge;
     const gap = Math.max(0, eBase - pension);
-    return annuityPV(gap, rLmp, n);
+    return annuityPV(gap, rLmp, n) * (1 + rLmp);
   }
 };
 
@@ -62,5 +66,6 @@ export const calcRP = (
 ): number => {
   const n = endAge - retireAge;
   if (n <= 0) return 0;
-  return annuityPV(eExtra, rRp, n);
+  // 提領從 retireAge+1 開始（先提領、後成長 = annuity-due）
+  return annuityPV(eExtra, rRp, n) * (1 + rRp);
 };
