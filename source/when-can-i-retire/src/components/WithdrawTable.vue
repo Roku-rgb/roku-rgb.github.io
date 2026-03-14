@@ -9,6 +9,10 @@ const props = defineProps<{
   isNominal: boolean;
 }>();
 
+const emit = defineEmits<{
+  "update:isNominal": [value: boolean];
+}>();
+
 const expanded = ref(false);
 const PREVIEW_COUNT = 10;
 
@@ -28,7 +32,7 @@ const displayRows = computed(() => {
         rpBalanceEnd: Math.round(r.rpBalanceEnd),
       };
     }
-    const k = r.age - props.currentAge;
+    const k = r.age - props.currentAge - 1; // 計算年初時的實質購買力，所以需要減去 1 年
     const f = Math.pow(1 + inf, k);
     return {
       ...r,
@@ -62,6 +66,20 @@ const hasMore = computed(() => displayRows.value.length > PREVIEW_COUNT);
           >（單位：萬元，{{ isNominal ? "名目" : "實質購買力" }}）</span
         >
       </div>
+      <div class="toggle-group">
+        <button
+          class="toggle-btn"
+          :class="{ active: isNominal }"
+          @click="emit('update:isNominal', true)">
+          名目
+        </button>
+        <button
+          class="toggle-btn"
+          :class="{ active: !isNominal }"
+          @click="emit('update:isNominal', false)">
+          實質購買力
+        </button>
+      </div>
     </div>
     <div class="table-scroll">
       <table>
@@ -71,7 +89,7 @@ const hasMore = computed(() => displayRows.value.length > PREVIEW_COUNT);
             <th>LMP 提領</th>
             <th>年金</th>
             <th>RP 提領</th>
-            <th>總支出</th>
+            <th>總金額</th>
             <th>LMP 餘額(年初/年末)</th>
             <th>RP 餘額(年初/年末)</th>
           </tr>
@@ -83,8 +101,16 @@ const hasMore = computed(() => displayRows.value.length > PREVIEW_COUNT);
             <td>{{ r.pension > 0 ? r.pension.toLocaleString() : "-" }}</td>
             <td>{{ r.rpWithdraw.toLocaleString() }}</td>
             <td class="cell-total">{{ r.totalSpend.toLocaleString() }}</td>
-            <td>{{ r.lmpBalanceStart.toLocaleString() }}/{{ r.lmpBalanceEnd.toLocaleString() }}</td>
-            <td>{{ r.rpBalanceStart.toLocaleString() }}/{{ r.rpBalanceEnd.toLocaleString() }}</td>
+            <td>
+              {{ r.lmpBalanceStart.toLocaleString() }}/{{
+                r.lmpBalanceEnd.toLocaleString()
+              }}
+            </td>
+            <td>
+              {{ r.rpBalanceStart.toLocaleString() }}/{{
+                r.rpBalanceEnd.toLocaleString()
+              }}
+            </td>
           </tr>
         </tbody>
       </table>
@@ -105,6 +131,9 @@ const hasMore = computed(() => displayRows.value.length > PREVIEW_COUNT);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
 }
 .table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 12px;
 }
 .table-title {
@@ -115,6 +144,31 @@ const hasMore = computed(() => displayRows.value.length > PREVIEW_COUNT);
 .table-unit {
   font-size: 11px;
   color: #555d6a;
+}
+.toggle-group {
+  display: flex;
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+.toggle-btn {
+  padding: 4px 10px;
+  font-size: 11px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #6b7280;
+  background: transparent;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.toggle-btn.active {
+  background: #334155;
+  color: #e8eaed;
+}
+.toggle-btn:hover:not(.active) {
+  color: #94a3b8;
 }
 .table-scroll {
   overflow-x: auto;

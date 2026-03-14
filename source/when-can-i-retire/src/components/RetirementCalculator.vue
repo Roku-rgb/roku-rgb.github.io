@@ -181,14 +181,14 @@ watch(
       :inflation="inputs.inflation.value"
       :current-age="inputs.currentAge.value"
       :retire-age="result.retireAge"
-      :is-nominal="isNominal" />
+      v-model:is-nominal="isNominal" />
 
     <!-- Withdraw Table -->
     <WithdrawTable
       :rows="withdrawRows"
       :inflation="inputs.inflation.value"
       :current-age="inputs.currentAge.value"
-      :is-nominal="isNominal" />
+      v-model:is-nominal="isNominal" />
 
     <!-- Footer -->
     <div class="footer">本工具僅供參考，不構成投資建議</div>

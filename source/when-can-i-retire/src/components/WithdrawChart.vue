@@ -21,6 +21,10 @@ const props = defineProps<{
   isNominal: boolean;
 }>();
 
+const emit = defineEmits<{
+  "update:isNominal": [value: boolean];
+}>();
+
 const displayRows = computed(() => {
   const inf = props.inflation / 100;
   return props.rows.map((r) => {
@@ -112,7 +116,7 @@ const chartOptions = computed(() => ({
           if (idx === undefined) return [];
           const r = displayRows.value[idx];
           return [
-            `總支出：${Math.round(r.totalSpend).toLocaleString()} 萬`,
+            `總金額：${Math.round(r.totalSpend).toLocaleString()} 萬`,
           ];
         },
       },
@@ -129,6 +133,20 @@ const chartOptions = computed(() => ({
         <span class="chart-unit"
           >（單位：萬元，{{ isNominal ? "名目" : "實質購買力" }}）</span
         >
+      </div>
+      <div class="toggle-group">
+        <button
+          class="toggle-btn"
+          :class="{ active: isNominal }"
+          @click="emit('update:isNominal', true)">
+          名目
+        </button>
+        <button
+          class="toggle-btn"
+          :class="{ active: !isNominal }"
+          @click="emit('update:isNominal', false)">
+          實質購買力
+        </button>
       </div>
     </div>
     <div class="chart-wrapper">
@@ -167,6 +185,31 @@ const chartOptions = computed(() => ({
 .chart-unit {
   font-size: 11px;
   color: #555d6a;
+}
+.toggle-group {
+  display: flex;
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+.toggle-btn {
+  padding: 4px 10px;
+  font-size: 11px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #6b7280;
+  background: transparent;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.toggle-btn.active {
+  background: #334155;
+  color: #e8eaed;
+}
+.toggle-btn:hover:not(.active) {
+  color: #94a3b8;
 }
 .chart-wrapper {
   height: 300px;

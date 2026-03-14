@@ -60,6 +60,11 @@ const display = computed(() => {
       </div>
     </div>
     <div class="cards">
+      <div class="card" style="--card-color: #34d399">
+        <div class="card-title">💰 退休時資產</div>
+        <div class="card-value">{{ display.assets.toLocaleString() }}</div>
+        <div class="card-sub">萬（累積總額）</div>
+      </div>
       <div class="card" style="--card-color: #f59e0b">
         <div class="card-title">🛡 LMP 本金</div>
         <div class="card-value">{{ display.lmp.toLocaleString() }}</div>
@@ -69,11 +74,6 @@ const display = computed(() => {
         <div class="card-title">📈 RP 本金</div>
         <div class="card-value">{{ display.rp.toLocaleString() }}</div>
         <div class="card-sub">萬（彈性花費）</div>
-      </div>
-      <div class="card" style="--card-color: #34d399">
-        <div class="card-title">💰 退休時資產</div>
-        <div class="card-value">{{ display.assets.toLocaleString() }}</div>
-        <div class="card-sub">萬（累積總額）</div>
       </div>
     </div>
   </div>
