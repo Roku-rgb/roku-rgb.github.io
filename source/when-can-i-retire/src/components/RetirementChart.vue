@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import { Line } from "vue-chartjs";
 import {
   Chart as ChartJS,
@@ -30,16 +30,26 @@ const props = defineProps<{
   retireAge: number | null;
   inflation: number;
   currentAge: number;
+  isNominal: boolean;
 }>();
 
-const isNominal = ref(true);
+const emit = defineEmits<{
+  "update:isNominal": [value: boolean];
+}>();
 
 const displayData = computed(() => {
   const inf = props.inflation / 100;
   return props.data.map((d) => {
-    if (!isNominal.value) {
+    if (!props.isNominal) {
       // 實質：assets 和 target 都已是實質值，直接顯示
-      return d;
+      return {
+        ...d,
+        assets: Math.round(d.assets),
+        target: Math.round(d.target),
+        lmp: Math.round(d.lmp),
+        rp: Math.round(d.rp),
+        surplus: Math.round(d.surplus),
+      };
     }
     // 名目：兩邊都乘以 (1+inf)^k
     const k = d.age - props.currentAge;
@@ -196,13 +206,13 @@ const chartOptions = computed(() => ({
         <button
           class="toggle-btn"
           :class="{ active: isNominal }"
-          @click="isNominal = true">
+          @click="emit('update:isNominal', true)">
           名目
         </button>
         <button
           class="toggle-btn"
           :class="{ active: !isNominal }"
-          @click="isNominal = false">
+          @click="emit('update:isNominal', false)">
           實質購買力
         </button>
       </div>

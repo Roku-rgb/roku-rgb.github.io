@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { useRetirementInputs } from "../composables/useRetirementInputs";
-import { useRetirementCalc } from "../composables/useRetirementCalc";
+import { ref } from "vue";
+import {
+  useRetirementCalc,
+  defaultInputs,
+} from "../composables/useRetirementCalc";
 import { fmtMoney } from "../utils/format";
 import ResultBanner from "./ResultBanner.vue";
 import InfoCards from "./InfoCards.vue";
@@ -9,8 +12,9 @@ import BreakdownTable from "./BreakdownTable.vue";
 import SliderInput from "./SliderInput.vue";
 import SliderGroup from "./SliderGroup.vue";
 
-const inputs = useRetirementInputs();
+const inputs = defaultInputs();
 const result = useRetirementCalc(inputs);
+const isNominal = ref(true);
 </script>
 
 <template>
@@ -28,14 +32,20 @@ const result = useRetirementCalc(inputs);
       :retire-details="result.retireDetails" />
 
     <!-- Info Cards -->
-    <InfoCards v-if="result.retireDetails" :details="result.retireDetails" />
+    <InfoCards
+      v-if="result.retireDetails"
+      :details="result.retireDetails"
+      :inflation="inputs.inflation.value"
+      :current-age="inputs.currentAge.value"
+      v-model:is-nominal="isNominal" />
 
     <!-- Chart -->
     <RetirementChart
       :data="result.data"
       :retire-age="result.retireAge"
       :inflation="inputs.inflation.value"
-      :current-age="inputs.currentAge.value" />
+      :current-age="inputs.currentAge.value"
+      v-model:is-nominal="isNominal" />
 
     <!-- Sliders: top row -->
     <div class="grid-2">
@@ -64,7 +74,7 @@ const result = useRetirementCalc(inputs);
           unit=" 萬" />
         <SliderInput
           v-model="inputs.rSave.value"
-          label="儲蓄期實質報酬率"
+          label="儲蓄期報酬率（名目）"
           :min="0"
           :max="16"
           :step="0.5"
