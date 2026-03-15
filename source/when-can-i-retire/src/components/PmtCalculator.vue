@@ -46,42 +46,37 @@ const pmt = computed(() => {
 
 <template>
   <div class="pmt-block">
-    <div class="block-header">
-      <div class="block-title">
-        RP 提領計算機
-        <span class="block-sub">PMT = PV × r / (1 − (1+r)<sup>−n</sup>)</span>
-      </div>
-      <div class="toggle-group">
-        <button
-          type="button"
-          class="toggle-btn"
-          :class="{ active: isNominal }"
-          @click="isNominal = true">
-          名目
-        </button>
-        <button
-          type="button"
-          class="toggle-btn"
-          :class="{ active: !isNominal }"
-          @click="isNominal = false">
-          實質購買力
-        </button>
-      </div>
-    </div>
-
     <div class="grid-3">
-      <SliderGroup title="帳戶餘額" color="#34d399">
+      <SliderGroup title="RP 提領計算機" color="#34d399">
+        <template #title-extra>
+          <span class="block-sub">PMT = PV × r / (1 − (1+r)<sup>−n</sup>)</span>
+        </template>
+        <template #title-right>
+          <div class="toggle-group">
+            <button
+              type="button"
+              class="toggle-btn"
+              :class="{ active: isNominal }"
+              @click="isNominal = true">
+              名目
+            </button>
+            <button
+              type="button"
+              class="toggle-btn"
+              :class="{ active: !isNominal }"
+              @click="isNominal = false">
+              實質購買力
+            </button>
+          </div>
+        </template>
         <SliderInput
           v-model="pv"
           label="目前 RP 帳戶餘額（名目）"
           :min="0"
           :max="3000"
-          :step="10"
+          :step="5"
           unit=" 萬"
           :format="fmtMoney" />
-      </SliderGroup>
-      
-      <SliderGroup title="提領年數" color="#34d399">
         <SliderInput
           v-model="n"
           label="還要領幾年"
@@ -89,15 +84,13 @@ const pmt = computed(() => {
           :max="80"
           :step="1"
           unit=" 年" />
-      </SliderGroup>
-      <SliderGroup title="報酬率" color="#34d399">
         <SliderInput
           v-if="isNominal"
           v-model="r"
           label="股市報酬率（名目）"
           :min="0"
           :max="20"
-          :step="0.5"
+          :step="0.1"
           unit="%" />
         <SliderInput
           v-else
@@ -105,7 +98,7 @@ const pmt = computed(() => {
           label="股市報酬率（實質）"
           :min="0"
           :max="16"
-          :step="0.5"
+          :step="0.1"
           unit="%" />
         <SliderInput
           v-if="isNominal"
@@ -113,7 +106,7 @@ const pmt = computed(() => {
           label="預估通膨率"
           :min="0"
           :max="6"
-          :step="0.5"
+          :step="0.1"
           unit="%" />
       </SliderGroup>
     </div>
@@ -135,28 +128,22 @@ const pmt = computed(() => {
   margin-bottom: 24px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
 }
-.block-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-.block-title {
-  font-size: 13px;
-  color: #8a919e;
-  font-weight: 500;
-}
 .block-sub {
+  display: block;
   font-size: 11px;
   color: #555d6a;
-  margin-left: 8px;
+  margin-bottom: 10px;
   font-family: "Space Mono", monospace;
 }
 .grid-3 {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 0 24px;
   margin-bottom: 16px;
+  width: 100%;
+}
+.grid-3 > * {
+  min-width: 0;
 }
 .result-row {
   display: flex;

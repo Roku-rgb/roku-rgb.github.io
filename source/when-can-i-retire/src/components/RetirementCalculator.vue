@@ -86,7 +86,7 @@ watch(
           v-model="inputs.currentCash.value"
           label="當前現金"
           :min="0"
-          :max="3000"
+          :max="1500"
           :step="10"
           unit=" 萬"
           :format="fmtMoney" />
@@ -94,15 +94,15 @@ watch(
           v-model="inputs.monthlySave.value"
           label="每月存款（名目）"
           :min="0"
-          :max="20"
-          :step="0.5"
+          :max="10"
+          :step="0.1"
           unit=" 萬" />
         <SliderInput
           v-model="inputs.rSave.value"
           label="儲蓄期報酬率（名目）"
           :min="0"
           :max="16"
-          :step="0.5"
+          :step="0.1"
           unit="%" />
       </SliderGroup>
 
@@ -125,7 +125,7 @@ watch(
           v-model="inputs.eExtra.value"
           label="每年額外花費（實質購買力）"
           :min="0"
-          :max="60"
+          :max="120"
           :step="2"
           unit=" 萬" />
         <SliderInput
@@ -146,33 +146,31 @@ watch(
     </div>
 
     <!-- Sliders: bottom row -->
-    <div class="grid-3">
+    <div class="slider-row-bottom">
       <SliderGroup title="利率假設" color="#a78bfa">
-        <SliderInput
-          v-model="inputs.inflation.value"
-          label="預估通膨率"
-          :min="0"
-          :max="6"
-          :step="0.5"
-          unit="%" />
-      </SliderGroup>
-      <SliderGroup title="&nbsp;" color="#a78bfa">
-        <SliderInput
-          v-model="inputs.rLmp.value"
-          label="TIPS 實質殖利率（LMP）"
-          :min="0"
-          :max="4"
-          :step="0.1"
-          unit="%" />
-      </SliderGroup>
-      <SliderGroup title="&nbsp;" color="#a78bfa">
-        <SliderInput
-          v-model="inputs.rRp.value"
-          label="股市實質報酬率（RP）"
-          :min="2"
-          :max="16"
-          :step="0.5"
-          unit="%" />
+        <div class="rate-sliders">
+          <SliderInput
+            v-model="inputs.inflation.value"
+            label="預估通膨率"
+            :min="0"
+            :max="6"
+            :step="0.1"
+            unit="%" />
+          <SliderInput
+            v-model="inputs.rLmp.value"
+            label="TIPS 實質殖利率（LMP）"
+            :min="0"
+            :max="4"
+            :step="0.1"
+            unit="%" />
+          <SliderInput
+            v-model="inputs.rRp.value"
+            label="股市實質報酬率（RP）"
+            :min="2"
+            :max="16"
+            :step="0.1"
+            unit="%" />
+        </div>
       </SliderGroup>
     </div>
 
@@ -237,11 +235,32 @@ watch(
   grid-template-columns: 1fr 1fr;
   gap: 0 24px;
 }
-.grid-3 {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 0 24px;
+@media (max-width: 640px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+    gap: 16px 0;
+  }
+}
+.slider-row-bottom {
   margin-top: 8px;
+}
+.rate-sliders {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.rate-sliders > * {
+  flex: 1;
+  min-width: 0;
+}
+@media (max-width: 640px) {
+  .rate-sliders {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .rate-sliders > * {
+    flex: none;
+  }
 }
 .footer {
   text-align: center;
