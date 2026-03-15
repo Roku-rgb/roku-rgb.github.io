@@ -48,7 +48,7 @@ watch(
     <!-- Header -->
     <div class="header">
       <div class="header-tag">LMP + RP(+ABW) Strategy</div>
-      <h1 class="header-title">退休年齡計算器</h1>
+      <h1 class="header-title">退休年齡計算機</h1>
       <div class="header-sub">調整下方參數，計算最早可退休年齡</div>
     </div>
 
