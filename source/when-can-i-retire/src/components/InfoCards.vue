@@ -133,6 +133,15 @@ const display = computed(() => {
   gap: 10px;
   flex-wrap: wrap;
 }
+@media (max-width: 640px) {
+  .card:first-child {
+    flex: 1 1 100%;
+  }
+  .card:not(:first-child) {
+    flex: 1 1 calc(50% - 5px);
+    min-width: 0;
+  }
+}
 .card {
   background: linear-gradient(
     135deg,
