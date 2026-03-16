@@ -7,5 +7,6 @@ export default defineConfig({
   base: "/when-can-i-retire/",
   build: {
     outDir: "../../when-can-i-retire",
+    emptyOutDir: true,
   },
 });
