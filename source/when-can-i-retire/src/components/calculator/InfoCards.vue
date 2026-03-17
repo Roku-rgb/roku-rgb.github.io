@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { RetireDetails } from "../types/retirement";
+import type { RetireDetails } from "../../types/retirement";
 
 const props = defineProps<{
   details: RetireDetails | null;

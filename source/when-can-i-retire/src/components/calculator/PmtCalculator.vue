@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
-import SliderInput from "./SliderInput.vue";
-import SliderGroup from "./SliderGroup.vue";
-import { fmtMoney } from "../utils/format";
+import SliderInput from "../common/SliderInput.vue";
+import SliderGroup from "../common/SliderGroup.vue";
+import { fmtMoney } from "../../utils/format";
 
 const pv = ref(470);
 const r = ref(8); // 名目報酬率

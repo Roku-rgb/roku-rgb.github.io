@@ -12,7 +12,7 @@ import {
   Legend,
 } from "chart.js";
 import annotationPlugin from "chartjs-plugin-annotation";
-import type { ChartDataPoint } from "../types/retirement";
+import type { ChartDataPoint } from "../../types/retirement";
 
 ChartJS.register(
   CategoryScale,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RetireDetails } from '../types/retirement'
+import type { RetireDetails } from '../../types/retirement'
 
 defineProps<{
   retireAge: number | null

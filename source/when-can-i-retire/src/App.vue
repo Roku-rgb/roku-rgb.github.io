@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import NavBar from "./components/NavBar.vue";
+import NavBar from "./components/common/NavBar.vue";
 import RetirementCalculator from "./pages/RetirementCalculator.vue";
 import IntroPage from "./pages/IntroPage.vue";
 
