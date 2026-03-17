@@ -14,8 +14,10 @@ import WithdrawTable from "../components/WithdrawTable.vue";
 import PmtCalculator from "../components/PmtCalculator.vue";
 import SliderInput from "../components/SliderInput.vue";
 import SliderGroup from "../components/SliderGroup.vue";
+import { useRecordSlots } from "../composables/useRecordSlots";
 
 const inputs = defaultInputs();
+const { activeSlot, slotFilled, slotDirty, switchSlot, resetSlot } = useRecordSlots(inputs);
 const result = useRetirementCalc(inputs);
 const isNominal = ref(true);
 
@@ -71,6 +73,55 @@ watch(
       :inflation="inputs.inflation.value"
       :current-age="inputs.currentAge.value"
       v-model:is-nominal="isNominal" />
+
+    <!-- Record Slot Bar -->
+    <div class="record-bar">
+      <button
+        v-for="(label, idx) in ['即時試算', '紀錄 1', '紀錄 2', '紀錄 3']"
+        :key="idx"
+        class="record-btn"
+        :class="{
+          active: activeSlot === idx,
+          filled: idx >= 1 && slotFilled[idx],
+        }"
+        @click="switchSlot(idx)">
+        {{ label }}
+        <!-- 當前選中的紀錄 slot：dirty / saved -->
+        <svg
+          v-if="idx >= 1 && activeSlot === idx"
+          class="save-icon"
+          :class="slotDirty ? 'dirty' : 'saved'"
+          width="14" height="14" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path v-if="!slotDirty" d="M5 12l5 5L20 7" />
+          <circle v-else cx="5" cy="12" r="2" fill="currentColor" stroke="none" />
+          <circle v-if="slotDirty" cx="12" cy="12" r="2" fill="currentColor" stroke="none" />
+          <circle v-if="slotDirty" cx="19" cy="12" r="2" fill="currentColor" stroke="none" />
+        </svg>
+        <!-- 非選中但有資料的紀錄 slot：saved -->
+        <svg
+          v-if="idx >= 1 && activeSlot !== idx && slotFilled[idx]"
+          class="save-icon saved"
+          width="14" height="14" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12l5 5L20 7" />
+        </svg>
+      </button>
+      <!-- 重設按鈕 -->
+      <button
+        class="reset-btn"
+        @click="resetSlot()">
+        <svg width="16" height="16" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 1 1 3 6.75" />
+          <polyline points="3 7 3 13 9 13" />
+        </svg>
+        <span class="reset-tip">重設</span>
+      </button>
+    </div>
 
     <!-- Sliders: top row -->
     <div class="grid-2">
@@ -229,6 +280,77 @@ watch(
   font-size: 12px;
   color: #6b7280;
   margin-top: 4px;
+}
+.record-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 6px;
+  background: #1e293b;
+  border-radius: 10px;
+}
+.record-btn {
+  flex: 1;
+  padding: 8px 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #6b7280;
+  font-size: 13px;
+  font-family: "DM Sans", sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.record-btn:hover {
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.04);
+}
+.record-btn.active {
+  background: #334155;
+  color: #e8eaed;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+.reset-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 10px;
+  flex-shrink: 0;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.reset-btn:hover {
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+.reset-tip {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: "DM Sans", sans-serif;
+}
+.save-icon {
+  margin-left: 4px;
+  vertical-align: middle;
+  transition: color 0.3s;
+}
+.save-icon.saved {
+  color: #34d399;
+}
+.save-icon.dirty {
+  color: #fbbf24;
+  animation: pulse-dirty 1.2s ease-in-out infinite;
+}
+@keyframes pulse-dirty {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 .grid-2 {
   display: grid;
