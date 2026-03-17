@@ -1,9 +1,20 @@
-/** Present value of an annuity */
+/** Present value of an ordinary annuity (payments at end of period) */
 export const annuityPV = (pmt: number, r: number, n: number): number => {
   if (n <= 0) return 0;
   if (Math.abs(r) < 0.0001) return pmt * n;
   return pmt * ((1 - Math.pow(1 + r, -n)) / r);
 };
+
+/** Present value of an annuity-due (payments at start of period) */
+export const annuityDuePV = (pmt: number, r: number, n: number): number => {
+  if (n <= 0) return 0;
+  if (Math.abs(r) < 0.0001) return pmt * n;
+  return annuityPV(pmt, r, n) * (1 + r);
+};
+
+/** Convert nominal rate to real rate using Fisher equation */
+export const nominalToReal = (nominal: number, inflation: number): number =>
+  (1 + nominal) / (1 + inflation) - 1;
 
 /** Future value with periodic deposits */
 export const futureValue = (

@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import NavBar from "./components/common/NavBar.vue";
 import RetirementCalculator from "./pages/RetirementCalculator.vue";
+import PortfolioSimulator from "./pages/PortfolioSimulator.vue";
 import IntroPage from "./pages/IntroPage.vue";
 
 const activePage = ref("calculator");
@@ -15,5 +16,6 @@ function onNavigate(page: string) {
 <template>
   <NavBar :active="activePage" @navigate="onNavigate" />
   <RetirementCalculator v-if="activePage === 'calculator'" />
+  <PortfolioSimulator v-else-if="activePage === 'portfolio'" />
   <IntroPage v-else-if="activePage === 'intro'" />
 </template>
