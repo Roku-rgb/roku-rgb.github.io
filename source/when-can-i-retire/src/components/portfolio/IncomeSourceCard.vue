@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import type { IncomeSource, ValueBasis } from '../../types/portfolio'
 import SliderInput from '../common/SliderInput.vue'
 
-const props = withDefaults(defineProps<{ color?: string }>(), { color: '#34d399' })
+const props = withDefaults(defineProps<{ color?: string; tag?: string; tagColor?: string }>(), { color: '#34d399', tag: '', tagColor: '' })
 const model = defineModel<IncomeSource>({ required: true })
 defineEmits<{ delete: [] }>()
 
@@ -27,6 +27,7 @@ const occurAge = computed({ get: () => model.value.occurAge, set: v => set('occu
 <template>
   <div class="card" :style="{ borderLeftColor: props.color }">
     <div class="card-header">
+      <span v-if="props.tag" class="type-tag" :style="{ color: props.tagColor, borderColor: props.tagColor }">{{ props.tag }}</span>
       <input
         class="card-label"
         :value="model.label"
@@ -61,6 +62,7 @@ const occurAge = computed({ get: () => model.value.occurAge, set: v => set('occu
         <SliderInput v-model="occurAge" label="發生時間" :min="20" :max="100" :step="1" unit=" 歲" />
       </template>
     </div>
+    <slot />
   </div>
 </template>
 
@@ -122,6 +124,18 @@ const occurAge = computed({ get: () => model.value.occurAge, set: v => set('occu
 }
 .card-delete:hover {
   color: #f87171;
+}
+.type-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  font-family: 'Space Mono', monospace;
+  border: 1px solid;
+  border-radius: 4px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  opacity: 0.85;
 }
 .card-body {
   display: flex;

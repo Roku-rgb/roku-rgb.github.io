@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, withDefaults } from 'vue'
 import type { LmpGroup, RpGroup, ValueBasis } from '../../types/portfolio'
 import SliderInput from '../common/SliderInput.vue'
 
 type Group = LmpGroup | RpGroup
 
 const model = defineModel<Group>({ required: true })
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   type: 'lmp' | 'rp'
   requiredValue: number
-}>()
+  tag?: string
+  tagColor?: string
+}>(), { tag: '', tagColor: '' })
 defineEmits<{ delete: [] }>()
 
 function set<K extends keyof Group>(key: K, value: Group[K]) {
@@ -28,6 +30,7 @@ const toAge = computed({ get: () => model.value.toAge, set: v => set('toAge', v)
 <template>
   <div class="card" :style="{ borderLeftColor: borderColor }">
     <div class="card-header">
+      <span v-if="props.tag" class="type-tag" :style="{ color: props.tagColor, borderColor: props.tagColor }">{{ props.tag }}</span>
       <input
         class="card-label"
         :value="model.label"
@@ -55,6 +58,7 @@ const toAge = computed({ get: () => model.value.toAge, set: v => set('toAge', v)
     <div class="card-footer">
       所需金額：<span class="computed-value" :style="{ color: borderColor }">{{ Math.round(props.requiredValue).toLocaleString() }} 萬</span>
     </div>
+    <slot />
   </div>
 </template>
 
@@ -100,6 +104,18 @@ const toAge = computed({ get: () => model.value.toAge, set: v => set('toAge', v)
 }
 .card-delete:hover {
   color: #f87171;
+}
+.type-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  font-family: 'Space Mono', monospace;
+  border: 1px solid;
+  border-radius: 4px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  opacity: 0.85;
 }
 .card-body {
   display: flex;

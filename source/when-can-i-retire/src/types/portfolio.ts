@@ -48,6 +48,19 @@ export interface Investment {
   toAge: number
 }
 
+export type PortfolioItem =
+  | { type: 'income'; data: IncomeSource }
+  | { type: 'expense'; data: ExpenseSource }
+  | { type: 'invest'; data: Investment }
+  | { type: 'lmp'; data: LmpGroup }
+  | { type: 'rp'; data: RpGroup }
+
+export interface GroupTab {
+  id: string
+  label: string
+  items: PortfolioItem[]
+}
+
 export interface PortfolioInputs {
   currentAge: number
   totalAssets: number
