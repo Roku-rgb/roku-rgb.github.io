@@ -75,15 +75,17 @@ export interface PortfolioInputs {
 export interface PortfolioYearRow {
   age: number
   idleAssets: number
-  incomes: { id: string; label: string; amount: number }[]
+  incomes: { id: string; label: string; amount: number; isOneTime: boolean }[]
   totalIncome: number
-  expenses: { id: string; label: string; amount: number }[]
+  expenses: { id: string; label: string; amount: number; isOneTime: boolean }[]
   totalExpenseFlow: number
   lmpDetails: { id: string; label: string; withdraw: number; balanceEnd: number }[]
   totalLmpWithdraw: number
   rpDetails: { id: string; label: string; withdraw: number; balanceEnd: number }[]
   totalRpWithdraw: number
   investDetails: { id: string; label: string; value: number }[]
+  investContributions: { id: string; label: string; amount: number }[]
+  totalInvestContribution: number
   totalInvestValue: number
   totalExpense: number
   netFlow: number

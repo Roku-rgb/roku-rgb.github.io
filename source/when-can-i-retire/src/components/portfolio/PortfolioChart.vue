@@ -22,12 +22,13 @@ const INCOME_COLORS = ['#34d399', '#10b981', '#059669', '#047857', '#065f46']
 const LMP_COLORS = ['#f59e0b', '#d97706', '#b45309', '#92400e', '#78350f']
 const RP_COLORS = ['#a78bfa', '#8b5cf6', '#7c3aed', '#6d28d9', '#5b21b6']
 const EXPENSE_COLORS = ['#f87171', '#ef4444', '#dc2626', '#b91c1c', '#991b1b']
+const INVEST_CONTRIB_COLORS = ['#38bdf8', '#0ea5e9', '#0284c7', '#0369a1', '#075985']
 
 const labels = computed(() => props.rows.map(r => r.age))
 
 const allIncomeIds = computed(() => {
   const ids = new Set<string>()
-  props.rows.forEach(r => r.incomes.forEach(i => { if (i.amount) ids.add(i.id) }))
+  props.rows.forEach(r => r.incomes.forEach(i => { if (i.amount && !i.isOneTime) ids.add(i.id) }))
   return [...ids]
 })
 const posIncomeIds = computed(() =>
@@ -38,6 +39,16 @@ const posIncomeIds = computed(() =>
 const negIncomeIds = computed(() =>
   allIncomeIds.value.filter(id => !posIncomeIds.value.includes(id)),
 )
+const allExpenseIds = computed(() => {
+  const ids = new Set<string>()
+  props.rows.forEach(r => r.expenses.forEach(e => { if (e.amount && !e.isOneTime) ids.add(e.id) }))
+  return [...ids]
+})
+const allInvestContribIds = computed(() => {
+  const ids = new Set<string>()
+  props.rows.forEach(r => r.investContributions.forEach(c => { if (c.amount) ids.add(c.id) }))
+  return [...ids]
+})
 const allLmpIds = computed(() => {
   const ids = new Set<string>()
   props.rows.forEach(r => r.lmpDetails.forEach(d => { if (d.withdraw) ids.add(d.id) }))
@@ -49,9 +60,13 @@ const allRpIds = computed(() => {
   return [...ids]
 })
 
-function findLabel(rows: PortfolioYearRow[], type: 'income' | 'lmp' | 'rp', id: string): string {
+function findLabel(rows: PortfolioYearRow[], type: 'income' | 'expense' | 'investContrib' | 'lmp' | 'rp', id: string): string {
   for (const r of rows) {
-    const list = type === 'income' ? r.incomes : type === 'lmp' ? r.lmpDetails : r.rpDetails
+    const list = type === 'income' ? r.incomes
+      : type === 'expense' ? r.expenses
+      : type === 'investContrib' ? r.investContributions
+      : type === 'lmp' ? r.lmpDetails
+      : r.rpDetails
     const item = list.find(x => x.id === id)
     if (item) return item.label
   }
@@ -83,7 +98,7 @@ const chartDataDiverging = computed(() => {
     stack: 'income',
   }))
 
-  const expenseDatasets = negIncomeIds.value.map((id, i) => ({
+  const negIncomeDatasets = negIncomeIds.value.map((id, i) => ({
     label: findLabel(props.rows, 'income', id),
     data: props.rows.map(r => Math.round(r.incomes.find(x => x.id === id)?.amount ?? 0)),
     backgroundColor: EXPENSE_COLORS[i % EXPENSE_COLORS.length],
@@ -91,21 +106,37 @@ const chartDataDiverging = computed(() => {
     stack: 'expense',
   }))
 
-  return { labels: labels.value, datasets: [...incomeDatasets, ...lmpDatasets, ...rpDatasets, ...expenseDatasets] }
+  const expenseDatasets = allExpenseIds.value.map((id, i) => ({
+    label: findLabel(props.rows, 'expense', id),
+    data: props.rows.map(r => -Math.round(r.expenses.find(x => x.id === id)?.amount ?? 0)),
+    backgroundColor: EXPENSE_COLORS[(negIncomeIds.value.length + i) % EXPENSE_COLORS.length],
+    borderRadius: 2,
+    stack: 'expense',
+  }))
+
+  const investContribDatasets = allInvestContribIds.value.map((id, i) => ({
+    label: findLabel(props.rows, 'investContrib', id),
+    data: props.rows.map(r => -Math.round(r.investContributions.find(x => x.id === id)?.amount ?? 0)),
+    backgroundColor: INVEST_CONTRIB_COLORS[i % INVEST_CONTRIB_COLORS.length],
+    borderRadius: 2,
+    stack: 'expense',
+  }))
+
+  return { labels: labels.value, datasets: [...incomeDatasets, ...lmpDatasets, ...rpDatasets, ...negIncomeDatasets, ...expenseDatasets, ...investContribDatasets] }
 })
+
+function recurringNet(r: PortfolioYearRow): number {
+  const recIncome = r.incomes.filter(i => !i.isOneTime).reduce((s, i) => s + i.amount, 0)
+  const recExpense = r.expenses.filter(e => !e.isOneTime).reduce((s, e) => s + e.amount, 0)
+  return recIncome + r.totalLmpWithdraw + r.totalRpWithdraw - recExpense - r.totalInvestContribution
+}
 
 const chartDataNet = computed(() => ({
   labels: labels.value,
   datasets: [{
     label: '淨現金流',
-    data: props.rows.map(r => {
-      const net = r.totalIncome + r.totalLmpWithdraw + r.totalRpWithdraw
-      return Math.round(net)
-    }),
-    backgroundColor: props.rows.map(r => {
-      const net = r.totalIncome + r.totalLmpWithdraw + r.totalRpWithdraw
-      return net >= 0 ? '#34d399' : '#f87171'
-    }),
+    data: props.rows.map(r => Math.round(recurringNet(r))),
+    backgroundColor: props.rows.map(r => recurringNet(r) >= 0 ? '#34d399' : '#f87171'),
     borderRadius: 2,
   }],
 }))
@@ -135,7 +166,7 @@ const chartDataGrouped = computed(() => {
     stack: 'income',
   }))
 
-  const expenseDatasets = negIncomeIds.value.map((id, i) => ({
+  const negIncomeDatasets = negIncomeIds.value.map((id, i) => ({
     label: findLabel(props.rows, 'income', id),
     data: props.rows.map(r => -Math.round(r.incomes.find(x => x.id === id)?.amount ?? 0)),
     backgroundColor: EXPENSE_COLORS[i % EXPENSE_COLORS.length],
@@ -143,7 +174,23 @@ const chartDataGrouped = computed(() => {
     stack: 'expense',
   }))
 
-  return { labels: labels.value, datasets: [...incomeDatasets, ...lmpDatasets, ...rpDatasets, ...expenseDatasets] }
+  const expenseDatasets = allExpenseIds.value.map((id, i) => ({
+    label: findLabel(props.rows, 'expense', id),
+    data: props.rows.map(r => Math.round(r.expenses.find(x => x.id === id)?.amount ?? 0)),
+    backgroundColor: EXPENSE_COLORS[(negIncomeIds.value.length + i) % EXPENSE_COLORS.length],
+    borderRadius: 2,
+    stack: 'expense',
+  }))
+
+  const investContribDatasets = allInvestContribIds.value.map((id, i) => ({
+    label: findLabel(props.rows, 'investContrib', id),
+    data: props.rows.map(r => Math.round(r.investContributions.find(x => x.id === id)?.amount ?? 0)),
+    backgroundColor: INVEST_CONTRIB_COLORS[i % INVEST_CONTRIB_COLORS.length],
+    borderRadius: 2,
+    stack: 'expense',
+  }))
+
+  return { labels: labels.value, datasets: [...incomeDatasets, ...lmpDatasets, ...rpDatasets, ...negIncomeDatasets, ...expenseDatasets, ...investContribDatasets] }
 })
 
 const chartData = computed(() => {
@@ -183,6 +230,7 @@ const chartOptions = computed(() => ({
       titleFont: { size: 14, weight: 'bold' as const },
       bodyFont: { size: 12 },
       padding: 12,
+      filter: (item: { raw: unknown }) => item.raw !== 0,
       callbacks: {
         title: (items: { dataIndex: number }[]) => {
           const idx = items[0]?.dataIndex
@@ -193,10 +241,12 @@ const chartOptions = computed(() => ({
           const idx = items[0]?.dataIndex
           if (idx === undefined) return []
           const r = props.rows[idx]
-          const posIncome = r.incomes.reduce((s, i) => s + Math.max(0, i.amount), 0)
-          const negIncome = r.incomes.reduce((s, i) => s + Math.min(0, i.amount), 0)
+          const recurring = r.incomes.filter(i => !i.isOneTime)
+          const posIncome = recurring.reduce((s, i) => s + Math.max(0, i.amount), 0)
+          const negIncome = -recurring.reduce((s, i) => s + Math.min(0, i.amount), 0)
+          const recurringExpense = r.expenses.filter(e => !e.isOneTime).reduce((s, e) => s + e.amount, 0)
           const chartIncome = posIncome + r.totalLmpWithdraw + r.totalRpWithdraw
-          const chartExpense = -negIncome
+          const chartExpense = negIncome + recurringExpense + r.totalInvestContribution
           return [
             `收入合計：${Math.round(chartIncome).toLocaleString()} 萬`,
             `支出合計：${Math.round(chartExpense).toLocaleString()} 萬`,
@@ -221,6 +271,12 @@ const legendItems = computed(() => {
   })
   negIncomeIds.value.forEach((id, i) => {
     items.push({ color: EXPENSE_COLORS[i % EXPENSE_COLORS.length], label: findLabel(props.rows, 'income', id) })
+  })
+  allExpenseIds.value.forEach((id, i) => {
+    items.push({ color: EXPENSE_COLORS[(negIncomeIds.value.length + i) % EXPENSE_COLORS.length], label: findLabel(props.rows, 'expense', id) })
+  })
+  allInvestContribIds.value.forEach((id, i) => {
+    items.push({ color: INVEST_CONTRIB_COLORS[i % INVEST_CONTRIB_COLORS.length], label: findLabel(props.rows, 'investContrib', id) })
   })
   return items
 })

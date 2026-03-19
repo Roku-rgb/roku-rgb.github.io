@@ -36,8 +36,8 @@ const toAge = computed({ get: () => model.value.toAge, set: v => set('toAge', v)
         </div>
       </SliderInput>
       <div class="field-row">
-        <SliderInput v-model="initialValue" label="初始金額" :min="0" :max="5000" :step="1" unit=" 萬" />
-        <SliderInput v-model="monthlyContribution" label="每月投資" :min="0" :max="50" :step="0.1" unit=" 萬" />
+        <SliderInput v-model="initialValue" label="初始金額" :min="0" :max="3000" :step="1" unit=" 萬" />
+        <SliderInput v-model="monthlyContribution" label="每月投資" :min="0" :max="15" :step="0.05" unit=" 萬" />
       </div>
       <div class="age-sliders">
         <SliderInput v-model="fromAge" label="起始年齡" :min="20" :max="100" :step="1" unit=" 歲" />

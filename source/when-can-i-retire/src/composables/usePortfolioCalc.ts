@@ -139,18 +139,18 @@ function simulate(
     // Income flows into idle assets
     const incomes = incomeSources.map(s => {
       if (s.isOneTime) {
-        if (age !== s.occurAge) return { id: s.id, label: s.label, amount: 0 }
-        return { id: s.id, label: s.label, amount: s.annualAmount }
+        if (age !== s.occurAge) return { id: s.id, label: s.label, amount: 0, isOneTime: true }
+        return { id: s.id, label: s.label, amount: s.annualAmount, isOneTime: true }
       }
       if (age < s.fromAge || age > s.toAge)
-        return { id: s.id, label: s.label, amount: 0 }
+        return { id: s.id, label: s.label, amount: 0, isOneTime: false }
       const k = age - s.fromAge
       const realGrowth =
         s.growthBasis === 'nominal'
           ? (1 + s.growthRate / 100) / (1 + inf) - 1
           : s.growthRate / 100
       const amount = s.annualAmount * Math.pow(1 + realGrowth, k)
-      return { id: s.id, label: s.label, amount }
+      return { id: s.id, label: s.label, amount, isOneTime: false }
     })
     const totalIncome = incomes.reduce((s, i) => s + i.amount, 0)
     idleAssets += totalIncome
@@ -158,18 +158,18 @@ function simulate(
     // Expense flows out of idle assets
     const expenses = expenseSources.map(s => {
       if (s.isOneTime) {
-        if (age !== s.occurAge) return { id: s.id, label: s.label, amount: 0 }
-        return { id: s.id, label: s.label, amount: s.annualAmount }
+        if (age !== s.occurAge) return { id: s.id, label: s.label, amount: 0, isOneTime: true }
+        return { id: s.id, label: s.label, amount: s.annualAmount, isOneTime: true }
       }
       if (age < s.fromAge || age > s.toAge)
-        return { id: s.id, label: s.label, amount: 0 }
+        return { id: s.id, label: s.label, amount: 0, isOneTime: false }
       const k = age - s.fromAge
       const realGrowth =
         s.growthBasis === 'nominal'
           ? (1 + s.growthRate / 100) / (1 + inf) - 1
           : s.growthRate / 100
       const amount = s.annualAmount * Math.pow(1 + realGrowth, k)
-      return { id: s.id, label: s.label, amount }
+      return { id: s.id, label: s.label, amount, isOneTime: false }
     })
     const totalExpenseFlow = expenses.reduce((s, e) => s + e.amount, 0)
     idleAssets -= totalExpenseFlow
@@ -199,6 +199,7 @@ function simulate(
     })
 
     // Investment growth + monthly contributions from idle assets
+    const investContributions: { id: string; label: string; amount: number }[] = []
     const investDetails = investments.map(inv => {
       let bal = invBal.get(inv.id) ?? 0
       if (age >= inv.fromAge && age < inv.toAge) {
@@ -207,9 +208,13 @@ function simulate(
         const rr = toReal(inv.rate, inv.rateBasis, inflation)
         bal = bal * (1 + rr) + annual
         invBal.set(inv.id, bal)
+        investContributions.push({ id: inv.id, label: inv.label, amount: annual })
+      } else {
+        investContributions.push({ id: inv.id, label: inv.label, amount: 0 })
       }
       return { id: inv.id, label: inv.label, value: bal }
     })
+    const totalInvestContrib = investContributions.reduce((s, c) => s + c.amount, 0)
 
     const totalLmpW = lmpDetails.reduce((s, d) => s + d.withdraw, 0)
     const totalRpW = rpDetails.reduce((s, d) => s + d.withdraw, 0)
@@ -228,9 +233,11 @@ function simulate(
       rpDetails,
       totalRpWithdraw: totalRpW,
       investDetails,
+      investContributions,
+      totalInvestContribution: totalInvestContrib,
       totalInvestValue: investDetails.reduce((s, d) => s + d.value, 0),
       totalExpense,
-      netFlow: totalIncome - totalExpenseFlow - totalExpense,
+      netFlow: totalIncome + totalLmpW + totalRpW - totalExpenseFlow - totalInvestContrib,
     })
   }
 
