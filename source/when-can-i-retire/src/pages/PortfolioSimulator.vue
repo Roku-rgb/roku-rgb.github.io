@@ -1,22 +1,35 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { IncomeSource, Investment, LmpGroup, RpGroup } from '../types/portfolio'
+import type { IncomeSource, ExpenseSource, Investment, LmpGroup, RpGroup } from '../types/portfolio'
 import { usePortfolioCalc } from '../composables/usePortfolioCalc'
 import { fmtMoney } from '../utils/format'
 import SliderInput from '../components/common/SliderInput.vue'
 import SliderGroup from '../components/common/SliderGroup.vue'
 import IncomeSourceCard from '../components/portfolio/IncomeSourceCard.vue'
+import ExpenseSourceCard from '../components/portfolio/ExpenseSourceCard.vue'
 import InvestmentCard from '../components/portfolio/InvestmentCard.vue'
-import WithdrawGroupCard from '../components/portfolio/WithdrawGroupCard.vue'
+import LmpGroupCard from '../components/portfolio/LmpGroupCard.vue'
+import RpGroupCard from '../components/portfolio/RpGroupCard.vue'
 import PortfolioChart from '../components/portfolio/PortfolioChart.vue'
 import BalanceChart from '../components/portfolio/BalanceChart.vue'
 import TotalAssetChart from '../components/portfolio/TotalAssetChart.vue'
+import AssetStackedBarChart from '../components/portfolio/AssetStackedBarChart.vue'
 import PortfolioTable from '../components/portfolio/PortfolioTable.vue'
 
 const MAX_GROUPS = 5
 
 let nextId = 1
 function uid() { return `g${nextId++}` }
+
+type Tab = 'income' | 'expense' | 'invest' | 'lmp' | 'rp'
+const activeTab = ref<Tab>('income')
+const tabs: { key: Tab; label: string; color: string }[] = [
+  { key: 'income', label: '收入', color: '#34d399' },
+  { key: 'expense', label: '支出', color: '#fb923c' },
+  { key: 'invest', label: '投資', color: '#60a5fa' },
+  { key: 'lmp', label: 'LMP', color: '#f59e0b' },
+  { key: 'rp', label: 'RP', color: '#a78bfa' },
+]
 
 const currentAge = ref(30)
 const totalAssets = ref(500)
@@ -25,7 +38,10 @@ const inflation = ref(2)
 const incomeSources = ref<IncomeSource[]>([{
   id: uid(), label: '勞保年金', annualAmount: 24, amountBasis: 'real',
   growthRate: 0, growthBasis: 'real', fromAge: 65, toAge: 85,
+  isOneTime: false, occurAge: 65,
 }])
+
+const expenseSources = ref<ExpenseSource[]>([])
 
 const investments = ref<Investment[]>([])
 
@@ -41,7 +57,7 @@ const rpGroups = ref<RpGroup[]>([{
 
 const result = usePortfolioCalc(
   currentAge, totalAssets, inflation,
-  incomeSources, investments, lmpGroups, rpGroups,
+  incomeSources, expenseSources, investments, lmpGroups, rpGroups,
 )
 
 function addIncome() {
@@ -49,6 +65,15 @@ function addIncome() {
   incomeSources.value.push({
     id: uid(), label: '新收入', annualAmount: 0, amountBasis: 'real',
     growthRate: 0, growthBasis: 'real', fromAge: 65, toAge: 85,
+    isOneTime: false, occurAge: 65,
+  })
+}
+function addExpense() {
+  if (expenseSources.value.length >= MAX_GROUPS) return
+  expenseSources.value.push({
+    id: uid(), label: '新支出', annualAmount: 0, amountBasis: 'real',
+    growthRate: 0, growthBasis: 'real', fromAge: 65, toAge: 85,
+    isOneTime: false, occurAge: 65,
   })
 }
 function addInvestment() {
@@ -73,6 +98,7 @@ function addRp() {
   })
 }
 function removeIncome(idx: number) { incomeSources.value.splice(idx, 1) }
+function removeExpense(idx: number) { expenseSources.value.splice(idx, 1) }
 function removeInvestment(idx: number) { investments.value.splice(idx, 1) }
 function removeLmp(idx: number) { lmpGroups.value.splice(idx, 1) }
 function removeRp(idx: number) { rpGroups.value.splice(idx, 1) }
@@ -106,11 +132,23 @@ function getRpReq(id: string): number {
       </div>
     </SliderGroup>
 
-    <!-- Income & Investment row -->
-    <div class="grid-2">
-      <div class="section">
+    <!-- Tab bar -->
+    <div class="tab-bar">
+      <button
+        v-for="tab in tabs"
+        :key="tab.key"
+        class="tab-btn"
+        :class="{ active: activeTab === tab.key }"
+        :style="activeTab === tab.key ? { color: tab.color, borderBottomColor: tab.color } : {}"
+        @click="activeTab = tab.key">{{ tab.label }}</button>
+    </div>
+
+    <!-- Tab content -->
+    <div class="tab-content">
+      <!-- 收入 -->
+      <div v-if="activeTab === 'income'" class="section">
         <div class="section-header">
-          <span class="section-title" style="color: #34d399">收入來源</span>
+          <span class="section-title" style="color: #34d399">收入</span>
           <button v-if="incomeSources.length < MAX_GROUPS" class="add-btn income" @click="addIncome">+ 新增收入</button>
         </div>
         <IncomeSourceCard
@@ -118,12 +156,27 @@ function getRpReq(id: string): number {
           :key="src.id"
           v-model="incomeSources[idx]"
           @delete="removeIncome(idx)" />
-        <div v-if="!incomeSources.length" class="empty-hint">尚無收入來源</div>
+        <div v-if="!incomeSources.length" class="empty-hint">尚無收入</div>
       </div>
 
-      <div class="section">
+      <!-- 支出 -->
+      <div v-if="activeTab === 'expense'" class="section">
         <div class="section-header">
-          <span class="section-title" style="color: #60a5fa">投資（累積期）</span>
+          <span class="section-title" style="color: #fb923c">支出</span>
+          <button v-if="expenseSources.length < MAX_GROUPS" class="add-btn expense" @click="addExpense">+ 新增支出</button>
+        </div>
+        <ExpenseSourceCard
+          v-for="(src, idx) in expenseSources"
+          :key="src.id"
+          v-model="expenseSources[idx]"
+          @delete="removeExpense(idx)" />
+        <div v-if="!expenseSources.length" class="empty-hint">尚無支出</div>
+      </div>
+
+      <!-- 投資 -->
+      <div v-if="activeTab === 'invest'" class="section">
+        <div class="section-header">
+          <span class="section-title" style="color: #60a5fa">投資</span>
           <button v-if="investments.length < MAX_GROUPS" class="add-btn invest" @click="addInvestment">+ 新增投資</button>
         </div>
         <InvestmentCard
@@ -134,68 +187,35 @@ function getRpReq(id: string): number {
           @delete="removeInvestment(idx)" />
         <div v-if="!investments.length" class="empty-hint">尚無投資</div>
       </div>
-    </div>
 
-    <!-- LMP & RP row -->
-    <div class="grid-2">
-      <div class="section">
+      <!-- LMP -->
+      <div v-if="activeTab === 'lmp'" class="section">
         <div class="section-header">
-          <span class="section-title" style="color: #f59e0b">LMP 群組</span>
+          <span class="section-title" style="color: #f59e0b">LMP</span>
           <button v-if="lmpGroups.length < MAX_GROUPS" class="add-btn lmp" @click="addLmp">+ 新增 LMP</button>
         </div>
-        <WithdrawGroupCard
+        <LmpGroupCard
           v-for="(g, idx) in lmpGroups"
           :key="g.id"
           v-model="lmpGroups[idx]"
-          type="lmp"
           :required-value="getLmpReq(g.id)"
           @delete="removeLmp(idx)" />
-        <div v-if="!lmpGroups.length" class="empty-hint">尚無 LMP 群組</div>
+        <div v-if="!lmpGroups.length" class="empty-hint">尚無 LMP</div>
       </div>
 
-      <div class="section">
+      <!-- RP -->
+      <div v-if="activeTab === 'rp'" class="section">
         <div class="section-header">
-          <span class="section-title" style="color: #a78bfa">RP 群組</span>
+          <span class="section-title" style="color: #a78bfa">RP</span>
           <button v-if="rpGroups.length < MAX_GROUPS" class="add-btn rp" @click="addRp">+ 新增 RP</button>
         </div>
-        <WithdrawGroupCard
+        <RpGroupCard
           v-for="(g, idx) in rpGroups"
           :key="g.id"
           v-model="rpGroups[idx]"
-          type="rp"
           :required-value="getRpReq(g.id)"
           @delete="removeRp(idx)" />
-        <div v-if="!rpGroups.length" class="empty-hint">尚無 RP 群組</div>
-      </div>
-    </div>
-
-    <!-- Summary Banner -->
-    <div class="summary-banner">
-      <div class="summary-item">
-        <span class="summary-label">LMP 所需</span>
-        <span class="summary-value lmp">{{ fmtMoney(Math.round(result.totalLmpRequired)) }} 萬</span>
-      </div>
-      <div class="summary-sep">+</div>
-      <div class="summary-item">
-        <span class="summary-label">RP 所需</span>
-        <span class="summary-value rp">{{ fmtMoney(Math.round(result.totalRpRequired)) }} 萬</span>
-      </div>
-      <div class="summary-sep">=</div>
-      <div class="summary-item">
-        <span class="summary-label">總需求</span>
-        <span class="summary-value total">{{ fmtMoney(Math.round(result.totalRequired)) }} 萬</span>
-      </div>
-      <div class="summary-divider"></div>
-      <div class="summary-item">
-        <span class="summary-label">可用資金</span>
-        <span class="summary-value funded">{{ fmtMoney(Math.round(result.totalFunded)) }} 萬</span>
-      </div>
-      <div class="summary-sep">→</div>
-      <div class="summary-item">
-        <span class="summary-label">缺口 / 盈餘</span>
-        <span class="summary-value" :class="result.gap >= 0 ? 'surplus' : 'deficit'">
-          {{ result.gap >= 0 ? '+' : '' }}{{ fmtMoney(Math.round(result.gap)) }} 萬
-        </span>
+        <div v-if="!rpGroups.length" class="empty-hint">尚無 RP</div>
       </div>
     </div>
 
@@ -203,6 +223,7 @@ function getRpReq(id: string): number {
     <PortfolioChart :rows="result.rows" />
     <BalanceChart :rows="result.rows" />
     <TotalAssetChart :rows="result.rows" />
+    <AssetStackedBarChart :rows="result.rows" />
     <PortfolioTable :rows="result.rows" />
 
     <!-- Footer -->
@@ -254,11 +275,35 @@ function getRpReq(id: string): number {
   min-width: 160px;
 }
 
-.grid-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 24px;
-  margin-bottom: 8px;
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #1e293b;
+  padding-bottom: 0;
+}
+.tab-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.2s;
+  margin-bottom: -1px;
+}
+.tab-btn:hover {
+  color: #94a3b8;
+}
+.tab-btn.active {
+  border-bottom-width: 2px;
+  border-bottom-style: solid;
+}
+.tab-content {
+  min-height: 120px;
 }
 
 .section {
@@ -290,6 +335,8 @@ function getRpReq(id: string): number {
 }
 .add-btn.income { color: #34d399; border-color: rgba(52, 211, 153, 0.3); }
 .add-btn.income:hover { background: rgba(52, 211, 153, 0.1); border-color: rgba(52, 211, 153, 0.5); }
+.add-btn.expense { color: #fb923c; border-color: rgba(251, 146, 60, 0.3); }
+.add-btn.expense:hover { background: rgba(251, 146, 60, 0.1); border-color: rgba(251, 146, 60, 0.5); }
 .add-btn.invest { color: #60a5fa; border-color: rgba(96, 165, 250, 0.3); }
 .add-btn.invest:hover { background: rgba(96, 165, 250, 0.1); border-color: rgba(96, 165, 250, 0.5); }
 .add-btn.lmp { color: #f59e0b; border-color: rgba(245, 158, 11, 0.3); }
@@ -366,10 +413,6 @@ function getRpReq(id: string): number {
 }
 
 @media (max-width: 640px) {
-  .grid-2 {
-    grid-template-columns: 1fr;
-    gap: 0;
-  }
   .global-sliders {
     flex-direction: column;
     gap: 0;

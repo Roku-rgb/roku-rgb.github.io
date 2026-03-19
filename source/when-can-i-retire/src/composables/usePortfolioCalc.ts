@@ -2,6 +2,7 @@ import { computed, type Ref } from 'vue'
 import { annuityDuePV, nominalToReal } from '../utils/finance'
 import type {
   IncomeSource,
+  ExpenseSource,
   Investment,
   LmpGroup,
   RpGroup,
@@ -67,6 +68,7 @@ function simulate(
   totalAssets: number,
   inflation: number,
   incomeSources: IncomeSource[],
+  expenseSources: ExpenseSource[],
   investments: Investment[],
   lmpGroups: LmpGroup[],
   rpGroups: RpGroup[],
@@ -76,7 +78,8 @@ function simulate(
   const allAges = [
     ...lmpGroups.flatMap(g => [g.fromAge, g.toAge]),
     ...rpGroups.flatMap(g => [g.fromAge, g.toAge]),
-    ...incomeSources.flatMap(s => [s.fromAge, s.toAge]),
+    ...incomeSources.flatMap(s => s.isOneTime ? [s.occurAge] : [s.fromAge, s.toAge]),
+    ...expenseSources.flatMap(s => s.isOneTime ? [s.occurAge] : [s.fromAge, s.toAge]),
     ...investments.flatMap(i => [i.fromAge, i.toAge]),
   ]
   if (allAges.length === 0) return []
@@ -135,6 +138,10 @@ function simulate(
 
     // Income flows into idle assets
     const incomes = incomeSources.map(s => {
+      if (s.isOneTime) {
+        if (age !== s.occurAge) return { id: s.id, label: s.label, amount: 0 }
+        return { id: s.id, label: s.label, amount: s.annualAmount }
+      }
       if (age < s.fromAge || age > s.toAge)
         return { id: s.id, label: s.label, amount: 0 }
       const k = age - s.fromAge
@@ -147,6 +154,25 @@ function simulate(
     })
     const totalIncome = incomes.reduce((s, i) => s + i.amount, 0)
     idleAssets += totalIncome
+
+    // Expense flows out of idle assets
+    const expenses = expenseSources.map(s => {
+      if (s.isOneTime) {
+        if (age !== s.occurAge) return { id: s.id, label: s.label, amount: 0 }
+        return { id: s.id, label: s.label, amount: s.annualAmount }
+      }
+      if (age < s.fromAge || age > s.toAge)
+        return { id: s.id, label: s.label, amount: 0 }
+      const k = age - s.fromAge
+      const realGrowth =
+        s.growthBasis === 'nominal'
+          ? (1 + s.growthRate / 100) / (1 + inf) - 1
+          : s.growthRate / 100
+      const amount = s.annualAmount * Math.pow(1 + realGrowth, k)
+      return { id: s.id, label: s.label, amount }
+    })
+    const totalExpenseFlow = expenses.reduce((s, e) => s + e.amount, 0)
+    idleAssets -= totalExpenseFlow
 
     // LMP withdrawals (annuity-due: withdraw at start of year, then grow)
     const lmpDetails = lmpGroups.map(g => {
@@ -195,6 +221,8 @@ function simulate(
       idleAssets,
       incomes,
       totalIncome,
+      expenses,
+      totalExpenseFlow,
       lmpDetails,
       totalLmpWithdraw: totalLmpW,
       rpDetails,
@@ -202,7 +230,7 @@ function simulate(
       investDetails,
       totalInvestValue: investDetails.reduce((s, d) => s + d.value, 0),
       totalExpense,
-      netFlow: totalIncome - totalExpense,
+      netFlow: totalIncome - totalExpenseFlow - totalExpense,
     })
   }
 
@@ -214,6 +242,7 @@ export function usePortfolioCalc(
   totalAssets: Ref<number>,
   inflation: Ref<number>,
   incomeSources: Ref<IncomeSource[]>,
+  expenseSources: Ref<ExpenseSource[]>,
   investments: Ref<Investment[]>,
   lmpGroups: Ref<LmpGroup[]>,
   rpGroups: Ref<RpGroup[]>,
@@ -254,7 +283,7 @@ export function usePortfolioCalc(
 
     const rows = simulate(
       currentAge.value, totalAssets.value, inf,
-      incomeSources.value, investments.value,
+      incomeSources.value, expenseSources.value, investments.value,
       lmpGroups.value, rpGroups.value,
       lmpReq, rpReq,
     )

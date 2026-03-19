@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { IncomeSource, ValueBasis } from '../../types/portfolio'
+import SliderInput from '../common/SliderInput.vue'
 
+const props = withDefaults(defineProps<{ color?: string }>(), { color: '#34d399' })
 const model = defineModel<IncomeSource>({ required: true })
 defineEmits<{ delete: [] }>()
 
@@ -10,66 +13,53 @@ function set<K extends keyof IncomeSource>(key: K, value: IncomeSource[K]) {
 function setBasis(field: 'amountBasis' | 'growthBasis', value: ValueBasis) {
   set(field, value)
 }
+function toggleOneTime() {
+  set('isOneTime', !model.value.isOneTime)
+}
+
+const annualAmount = computed({ get: () => model.value.annualAmount, set: v => set('annualAmount', v) })
+const growthRate = computed({ get: () => model.value.growthRate, set: v => set('growthRate', v) })
+const fromAge = computed({ get: () => model.value.fromAge, set: v => set('fromAge', v) })
+const toAge = computed({ get: () => model.value.toAge, set: v => set('toAge', v) })
+const occurAge = computed({ get: () => model.value.occurAge, set: v => set('occurAge', v) })
 </script>
 
 <template>
-  <div class="card">
+  <div class="card" :style="{ borderLeftColor: props.color }">
     <div class="card-header">
       <input
         class="card-label"
         :value="model.label"
         @input="set('label', ($event.target as HTMLInputElement).value)" />
+      <button
+        class="onetime-btn"
+        :class="{ active: model.isOneTime }"
+        :style="model.isOneTime ? { borderColor: props.color, color: props.color } : {}"
+        @click="toggleOneTime">一次性</button>
       <button class="card-delete" @click="$emit('delete')">×</button>
     </div>
     <div class="card-body">
-      <div class="field">
-        <label>金額/年</label>
-        <div class="input-row">
-          <div class="input-unit">
-            <input
-              type="number"
-              :value="model.annualAmount"
-              @input="set('annualAmount', +($event.target as HTMLInputElement).value)" />
-            <span class="unit">萬</span>
-          </div>
-          <div class="basis-toggle">
-            <button :class="{ active: model.amountBasis === 'nominal' }" @click="setBasis('amountBasis', 'nominal')">名目</button>
-            <button :class="{ active: model.amountBasis === 'real' }" @click="setBasis('amountBasis', 'real')">實質</button>
-          </div>
+      <SliderInput v-model="annualAmount" :label="model.isOneTime ? '金額' : '金額/年'" :min="0" :max="200" :step="1" unit=" 萬">
+        <div class="basis-toggle">
+          <button :class="{ active: model.amountBasis === 'nominal' }" @click="setBasis('amountBasis', 'nominal')">名目</button>
+          <button :class="{ active: model.amountBasis === 'real' }" @click="setBasis('amountBasis', 'real')">實質</button>
         </div>
-      </div>
-      <div class="field">
-        <label>年成長率</label>
-        <div class="input-row">
-          <div class="input-unit">
-            <input
-              type="number"
-              step="0.1"
-              :value="model.growthRate"
-              @input="set('growthRate', +($event.target as HTMLInputElement).value)" />
-            <span class="unit">%</span>
-          </div>
+      </SliderInput>
+      <template v-if="!model.isOneTime">
+        <SliderInput v-model="growthRate" label="年成長率" :min="0" :max="20" :step="0.1" unit="%">
           <div class="basis-toggle">
             <button :class="{ active: model.growthBasis === 'nominal' }" @click="setBasis('growthBasis', 'nominal')">名目</button>
             <button :class="{ active: model.growthBasis === 'real' }" @click="setBasis('growthBasis', 'real')">實質</button>
           </div>
+        </SliderInput>
+        <div class="age-sliders">
+          <SliderInput v-model="fromAge" label="起始年齡" :min="20" :max="100" :step="1" unit=" 歲" />
+          <SliderInput v-model="toAge" label="結束年齡" :min="20" :max="100" :step="1" unit=" 歲" />
         </div>
-      </div>
-      <div class="field">
-        <label>期間</label>
-        <div class="age-row">
-          <input
-            type="number"
-            :value="model.fromAge"
-            @input="set('fromAge', +($event.target as HTMLInputElement).value)" />
-          <span class="age-sep">~</span>
-          <input
-            type="number"
-            :value="model.toAge"
-            @input="set('toAge', +($event.target as HTMLInputElement).value)" />
-          <span class="unit">歲</span>
-        </div>
-      </div>
+      </template>
+      <template v-else>
+        <SliderInput v-model="occurAge" label="發生時間" :min="20" :max="100" :step="1" unit=" 歲" />
+      </template>
     </div>
   </div>
 </template>
@@ -78,7 +68,7 @@ function setBasis(field: 'amountBasis' | 'growthBasis', value: ValueBasis) {
 .card {
   background: rgba(15, 23, 42, 0.6);
   border: 1px solid #1e293b;
-  border-left: 3px solid #34d399;
+  border-left: 3px solid;
   border-radius: 12px;
   padding: 12px 14px;
   margin-bottom: 10px;
@@ -104,6 +94,22 @@ function setBasis(field: 'amountBasis' | 'growthBasis', value: ValueBasis) {
 .card-label:focus {
   border-bottom-color: #34d399;
 }
+.onetime-btn {
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  border: 1px solid #334155;
+  border-radius: 5px;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.onetime-btn.active {
+  background: rgba(255, 255, 255, 0.05);
+}
 .card-delete {
   background: transparent;
   border: none;
@@ -120,42 +126,7 @@ function setBasis(field: 'amountBasis' | 'growthBasis', value: ValueBasis) {
 .card-body {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-.field label {
-  display: block;
-  font-size: 11px;
-  color: #6b7280;
-  margin-bottom: 3px;
-}
-.input-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.input-unit {
-  display: flex;
-  align-items: center;
   gap: 4px;
-}
-.input-unit input {
-  width: 80px;
-  background: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 6px;
-  color: #e8eaed;
-  font-size: 13px;
-  font-family: 'Space Mono', monospace;
-  padding: 4px 8px;
-  outline: none;
-}
-.input-unit input:focus {
-  border-color: #60a5fa;
-}
-.unit {
-  font-size: 11px;
-  color: #6b7280;
-  flex-shrink: 0;
 }
 .basis-toggle {
   display: flex;
@@ -163,7 +134,6 @@ function setBasis(field: 'amountBasis' | 'growthBasis', value: ValueBasis) {
   border-radius: 6px;
   padding: 1px;
   gap: 1px;
-  flex-shrink: 0;
 }
 .basis-toggle button {
   padding: 3px 8px;
@@ -180,28 +150,11 @@ function setBasis(field: 'amountBasis' | 'growthBasis', value: ValueBasis) {
   background: #334155;
   color: #e8eaed;
 }
-.age-row {
+.age-sliders {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  gap: 16px;
 }
-.age-row input {
-  width: 56px;
-  background: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 6px;
-  color: #e8eaed;
-  font-size: 13px;
-  font-family: 'Space Mono', monospace;
-  padding: 4px 8px;
-  outline: none;
-  text-align: center;
-}
-.age-row input:focus {
-  border-color: #60a5fa;
-}
-.age-sep {
-  color: #6b7280;
-  font-size: 13px;
+.age-sliders > * {
+  flex: 1;
 }
 </style>

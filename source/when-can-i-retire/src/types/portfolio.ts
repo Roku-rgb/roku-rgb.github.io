@@ -9,7 +9,11 @@ export interface IncomeSource {
   growthBasis: ValueBasis
   fromAge: number
   toAge: number
+  isOneTime: boolean
+  occurAge: number
 }
+
+export type ExpenseSource = IncomeSource
 
 export interface LmpGroup {
   id: string
@@ -49,6 +53,7 @@ export interface PortfolioInputs {
   totalAssets: number
   inflation: number
   incomeSources: IncomeSource[]
+  expenseSources: ExpenseSource[]
   investments: Investment[]
   lmpGroups: LmpGroup[]
   rpGroups: RpGroup[]
@@ -59,6 +64,8 @@ export interface PortfolioYearRow {
   idleAssets: number
   incomes: { id: string; label: string; amount: number }[]
   totalIncome: number
+  expenses: { id: string; label: string; amount: number }[]
+  totalExpenseFlow: number
   lmpDetails: { id: string; label: string; withdraw: number; balanceEnd: number }[]
   totalLmpWithdraw: number
   rpDetails: { id: string; label: string; withdraw: number; balanceEnd: number }[]

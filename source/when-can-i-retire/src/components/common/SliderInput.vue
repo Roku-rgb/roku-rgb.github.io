@@ -18,7 +18,10 @@ const display = (v: number) => props.format ? props.format(v) : String(v)
 <template>
   <div class="slider">
     <div class="slider-header">
-      <span class="slider-label">{{ label }}</span>
+      <span class="slider-left">
+        <span class="slider-label">{{ label }}</span>
+        <slot />
+      </span>
       <span class="slider-value">{{ display(model) }}{{ unit }}</span>
     </div>
     <input
@@ -56,6 +59,11 @@ const display = (v: number) => props.format ? props.format(v) : String(v)
   font-weight: 700;
   color: #e8eaed;
   font-family: 'Space Mono', monospace;
+}
+.slider-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .slider input[type='range'] {
   width: 100%;

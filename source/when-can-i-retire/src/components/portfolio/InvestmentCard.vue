@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { Investment, ValueBasis } from '../../types/portfolio'
+import SliderInput from '../common/SliderInput.vue'
 
 const model = defineModel<Investment>({ required: true })
 const props = defineProps<{ endValue: number }>()
@@ -8,6 +10,12 @@ defineEmits<{ delete: [] }>()
 function set<K extends keyof Investment>(key: K, value: Investment[K]) {
   model.value = { ...model.value, [key]: value }
 }
+
+const rate = computed({ get: () => model.value.rate, set: v => set('rate', v) })
+const initialValue = computed({ get: () => model.value.initialValue, set: v => set('initialValue', v) })
+const monthlyContribution = computed({ get: () => model.value.monthlyContribution, set: v => set('monthlyContribution', v) })
+const fromAge = computed({ get: () => model.value.fromAge, set: v => set('fromAge', v) })
+const toAge = computed({ get: () => model.value.toAge, set: v => set('toAge', v) })
 </script>
 
 <template>
@@ -20,60 +28,19 @@ function set<K extends keyof Investment>(key: K, value: Investment[K]) {
       <button class="card-delete" @click="$emit('delete')">×</button>
     </div>
     <div class="card-body">
-      <div class="field">
-        <label>報酬率</label>
-        <div class="input-row">
-          <div class="input-unit">
-            <input
-              type="number"
-              step="0.1"
-              :value="model.rate"
-              @input="set('rate', +($event.target as HTMLInputElement).value)" />
-            <span class="unit">%</span>
-          </div>
-          <div class="basis-toggle">
-            <button :class="{ active: model.rateBasis === 'nominal' }" @click="set('rateBasis', 'nominal' as ValueBasis)">名目</button>
-            <button :class="{ active: model.rateBasis === 'real' }" @click="set('rateBasis', 'real' as ValueBasis)">實質</button>
-          </div>
+      <SliderInput v-model="rate" label="報酬率" :min="0" :max="20" :step="0.1" unit="%">
+        <div class="basis-toggle">
+          <button :class="{ active: model.rateBasis === 'nominal' }" @click="set('rateBasis', 'nominal' as ValueBasis)">名目</button>
+          <button :class="{ active: model.rateBasis === 'real' }" @click="set('rateBasis', 'real' as ValueBasis)">實質</button>
         </div>
-      </div>
+      </SliderInput>
       <div class="field-row">
-        <div class="field">
-          <label>初始金額</label>
-          <div class="input-unit">
-            <input
-              type="number"
-              :value="model.initialValue"
-              @input="set('initialValue', +($event.target as HTMLInputElement).value)" />
-            <span class="unit">萬</span>
-          </div>
-        </div>
-        <div class="field">
-          <label>每月投資</label>
-          <div class="input-unit">
-            <input
-              type="number"
-              step="0.1"
-              :value="model.monthlyContribution"
-              @input="set('monthlyContribution', +($event.target as HTMLInputElement).value)" />
-            <span class="unit">萬</span>
-          </div>
-        </div>
+        <SliderInput v-model="initialValue" label="初始金額" :min="0" :max="5000" :step="1" unit=" 萬" />
+        <SliderInput v-model="monthlyContribution" label="每月投資" :min="0" :max="50" :step="0.1" unit=" 萬" />
       </div>
-      <div class="field">
-        <label>期間</label>
-        <div class="age-row">
-          <input
-            type="number"
-            :value="model.fromAge"
-            @input="set('fromAge', +($event.target as HTMLInputElement).value)" />
-          <span class="age-sep">~</span>
-          <input
-            type="number"
-            :value="model.toAge"
-            @input="set('toAge', +($event.target as HTMLInputElement).value)" />
-          <span class="unit">歲</span>
-        </div>
+      <div class="age-sliders">
+        <SliderInput v-model="fromAge" label="起始年齡" :min="20" :max="100" :step="1" unit=" 歲" />
+        <SliderInput v-model="toAge" label="結束年齡" :min="20" :max="100" :step="1" unit=" 歲" />
       </div>
     </div>
     <div class="card-footer">
@@ -128,49 +95,7 @@ function set<K extends keyof Investment>(key: K, value: Investment[K]) {
 .card-body {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-.field label {
-  display: block;
-  font-size: 11px;
-  color: #6b7280;
-  margin-bottom: 3px;
-}
-.field-row {
-  display: flex;
-  gap: 12px;
-}
-.field-row .field {
-  flex: 1;
-}
-.input-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.input-unit {
-  display: flex;
-  align-items: center;
   gap: 4px;
-}
-.input-unit input {
-  width: 80px;
-  background: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 6px;
-  color: #e8eaed;
-  font-size: 13px;
-  font-family: 'Space Mono', monospace;
-  padding: 4px 8px;
-  outline: none;
-}
-.input-unit input:focus {
-  border-color: #60a5fa;
-}
-.unit {
-  font-size: 11px;
-  color: #6b7280;
-  flex-shrink: 0;
 }
 .basis-toggle {
   display: flex;
@@ -178,7 +103,6 @@ function set<K extends keyof Investment>(key: K, value: Investment[K]) {
   border-radius: 6px;
   padding: 1px;
   gap: 1px;
-  flex-shrink: 0;
 }
 .basis-toggle button {
   padding: 3px 8px;
@@ -195,29 +119,19 @@ function set<K extends keyof Investment>(key: K, value: Investment[K]) {
   background: #334155;
   color: #e8eaed;
 }
-.age-row {
+.field-row {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  gap: 16px;
 }
-.age-row input {
-  width: 56px;
-  background: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 6px;
-  color: #e8eaed;
-  font-size: 13px;
-  font-family: 'Space Mono', monospace;
-  padding: 4px 8px;
-  outline: none;
-  text-align: center;
+.field-row > * {
+  flex: 1;
 }
-.age-row input:focus {
-  border-color: #60a5fa;
+.age-sliders {
+  display: flex;
+  gap: 16px;
 }
-.age-sep {
-  color: #6b7280;
-  font-size: 13px;
+.age-sliders > * {
+  flex: 1;
 }
 .card-footer {
   margin-top: 10px;
