@@ -42,7 +42,16 @@ const groupTabs = ref<GroupTab[]>([
   {
     id: uid(), label: '薪水',
     items: [
-      { type: 'income', data: { id: uid(), label: '薪資收入', annualAmount: 100, amountBasis: 'real', growthRate: 2, growthBasis: 'real', fromAge: 30, toAge: 64, isOneTime: false, occurAge: 30 } },
+      { type: 'income', data: { id: uid(), label: '薪資收入', annualAmount: 60, amountBasis: 'real', growthRate: 1, growthBasis: 'real', fromAge: 30, toAge: 64, isOneTime: false, occurAge: 30 } },
+      { type: 'expense', data: { id: uid(), label: '基本生活費-買房前', annualAmount: 36, amountBasis: 'real', growthRate: 0, growthBasis: 'real', fromAge: 30, toAge: 39, isOneTime: false, occurAge: 30 } },
+      { type: 'expense', data: { id: uid(), label: '基本生活費-買房後', annualAmount: 24, amountBasis: 'real', growthRate: 0, growthBasis: 'real', fromAge: 40, toAge: 64, isOneTime: false, occurAge: 30 } },
+    ],
+  },
+  {
+    id: uid(), label: '買房',
+    items: [
+      { type: 'expense', data: { id: uid(), label: '買房頭期款', annualAmount: 160, amountBasis: 'real', growthRate: 0, growthBasis: 'real', fromAge: 40, toAge: 40, isOneTime: true, occurAge: 40 } },
+      { type: 'expense', data: { id: uid(), label: '房貸', annualAmount: 2, amountBasis: 'real', growthRate: 0, growthBasis: 'real', fromAge: 40, toAge: 79, isOneTime: false, occurAge: 40 } },
     ],
   },
   { id: uid(), label: '40+', items: [] },
@@ -51,8 +60,10 @@ const groupTabs = ref<GroupTab[]>([
     id: uid(), label: '65+',
     items: [
       { type: 'income', data: { id: uid(), label: '勞保年金', annualAmount: 24, amountBasis: 'real', growthRate: 0, growthBasis: 'real', fromAge: 65, toAge: 85, isOneTime: false, occurAge: 65 } },
-      { type: 'lmp', data: { id: uid(), label: '基本生活費', rate: 1.5, rateBasis: 'real', annualWithdraw: 48, withdrawBasis: 'real', fromAge: 65, toAge: 85 } },
-      { type: 'rp', data: { id: uid(), label: '額外花費', rate: 6, rateBasis: 'real', annualWithdraw: 20, withdrawBasis: 'real', fromAge: 65, toAge: 85 } },
+      { type: 'lmp', data: { id: uid(), label: 'LMP 年金', rate: 1.5, rateBasis: 'real', annualWithdraw: 48, withdrawBasis: 'real', fromAge: 65, toAge: 85 } },
+      { type: 'rp', data: { id: uid(), label: 'RP 額外年金', rate: 6, rateBasis: 'real', annualWithdraw: 12, withdrawBasis: 'real', fromAge: 65, toAge: 85 } },
+      { type: 'expense', data: { id: uid(), label: '基本生活費', annualAmount: 84, amountBasis: 'real', growthRate: 0, growthBasis: 'real', fromAge: 65, toAge: 85, isOneTime: false, occurAge: 30 } },
+      { type: 'invest', data: { id: uid(), label: '退休金投資', rate: 6, rateBasis: 'real', initialValue: 0, monthlyContribution: 0.8, fromAge: 30, toAge: 65 } },
     ],
   },
 ])
@@ -125,7 +136,7 @@ function onTabDragEnd() {
 
 /* ── Global Parameters ── */
 const currentAge = ref(30)
-const totalAssets = ref(500)
+const totalAssets = ref(100)
 const inflation = ref(2)
 
 /* ── Record Slots ── */
