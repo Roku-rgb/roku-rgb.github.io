@@ -5,6 +5,7 @@ import { usePortfolioCalc } from '../composables/usePortfolioCalc'
 import { usePortfolioRecordSlots } from '../composables/usePortfolioRecordSlots'
 import { fmtMoney } from '../utils/format'
 import { encodePortfolioState, decodePortfolioState, getPortfolioHashData } from '../utils/urlState'
+import { PORTFOLIO_PRESETS, hydratePreset } from '../data/portfolioPresets'
 import SliderInput from '../components/common/SliderInput.vue'
 import SliderGroup from '../components/common/SliderGroup.vue'
 import IncomeSourceCard from '../components/portfolio/IncomeSourceCard.vue'
@@ -242,6 +243,98 @@ const TYPE_META: Record<string, { label: string; color: string }> = {
   rp:      { label: 'RP',   color: '#a78bfa' },
 }
 
+/* ── Load Preset ── */
+const presetMenuOpen = ref(false)
+function loadPreset(idx: number) {
+  const state = hydratePreset(PORTFOLIO_PRESETS[idx], uid)
+  currentAge.value = state.currentAge
+  totalAssets.value = state.totalAssets
+  inflation.value = state.inflation
+  groupTabs.value = state.groupTabs
+  activeGroupIdx.value = 0
+  presetMenuOpen.value = false
+}
+
+/* ── Export / Import Portfolio ── */
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const importMsg = ref<{ text: string; ok: boolean } | null>(null)
+let importMsgTimer: ReturnType<typeof setTimeout> | null = null
+
+function showImportMsg(text: string, ok: boolean) {
+  importMsg.value = { text, ok }
+  if (importMsgTimer) clearTimeout(importMsgTimer)
+  importMsgTimer = setTimeout(() => { importMsg.value = null }, 2500)
+}
+
+function exportPortfolio() {
+  const state = {
+    _version: 1,
+    currentAge: currentAge.value,
+    totalAssets: totalAssets.value,
+    inflation: inflation.value,
+    groupTabs: groupTabs.value.map(g => ({
+      label: g.label,
+      items: g.items.map(item => {
+        const { id: _, ...rest } = item.data as unknown as Record<string, unknown> & { id: string }
+        return { type: item.type, data: rest }
+      }),
+    })),
+  }
+  const json = JSON.stringify(state, null, 2)
+  const blob = new Blob([json], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `portfolio-${new Date().toISOString().slice(0, 10)}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function triggerImport() {
+  fileInputRef.value?.click()
+}
+
+function onImportFile(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  input.value = ''
+
+  const reader = new FileReader()
+  reader.onload = () => {
+    try {
+      const raw = JSON.parse(reader.result as string)
+      if (
+        typeof raw.currentAge !== 'number' ||
+        typeof raw.totalAssets !== 'number' ||
+        typeof raw.inflation !== 'number' ||
+        !Array.isArray(raw.groupTabs)
+      ) {
+        showImportMsg('格式錯誤：缺少必要欄位', false)
+        return
+      }
+      const hydrated = raw.groupTabs.map((g: { label: string; items: Array<{ type: string; data: Record<string, unknown> }> }) => ({
+        id: uid(),
+        label: g.label,
+        items: g.items.map((item: { type: string; data: Record<string, unknown> }) => ({
+          type: item.type,
+          data: { ...item.data, id: uid() },
+        })),
+      })) as GroupTab[]
+
+      currentAge.value = raw.currentAge
+      totalAssets.value = raw.totalAssets
+      inflation.value = raw.inflation
+      groupTabs.value = hydrated
+      activeGroupIdx.value = 0
+      showImportMsg('匯入成功', true)
+    } catch {
+      showImportMsg('檔案解析失敗', false)
+    }
+  }
+  reader.readAsText(file)
+}
+
 /* ── Sync state → URL hash (debounced, replaceState to avoid history spam) ── */
 let _urlTimer: ReturnType<typeof setTimeout> | null = null
 watch(
@@ -267,6 +360,68 @@ onUnmounted(() => { if (_urlTimer) clearTimeout(_urlTimer) })
       <div class="header-tag">Multi-Asset Portfolio Simulator</div>
       <h1 class="header-title">多資產組合模擬器</h1>
       <div class="header-sub">建立多組 LMP / RP + 多組收入來源，模擬退休後現金流</div>
+    </div>
+
+    <!-- Preset Loader + Import/Export -->
+    <div class="preset-bar">
+      <div class="preset-actions">
+        <button class="preset-toggle" @click="presetMenuOpen = !presetMenuOpen">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+            <polyline points="7.5 4.21 12 6.81 16.5 4.21" />
+            <polyline points="7.5 19.79 7.5 14.6 3 12" />
+            <polyline points="21 12 16.5 14.6 16.5 19.79" />
+            <line x1="12" y1="22" x2="12" y2="17" />
+            <line x1="12" y1="13" x2="12" y2="7" />
+          </svg>
+          載入範例組合
+          <svg class="chevron" :class="{ open: presetMenuOpen }" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+
+        <span class="preset-divider" />
+
+        <button class="io-btn" @click="triggerImport" title="匯入組合 (.json)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          匯入
+        </button>
+        <input ref="fileInputRef" type="file" accept=".json" class="hidden-input" @change="onImportFile" />
+
+        <button class="io-btn" @click="exportPortfolio" title="匯出目前組合">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          匯出
+        </button>
+      </div>
+
+      <Transition name="import-msg">
+        <div v-if="importMsg" class="import-msg" :class="importMsg.ok ? 'ok' : 'err'">
+          <svg v-if="importMsg.ok" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7" /></svg>
+          <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
+          {{ importMsg.text }}
+        </div>
+      </Transition>
+
+      <Transition name="preset-dropdown">
+        <div v-if="presetMenuOpen" class="preset-menu">
+          <button
+            v-for="(preset, idx) in PORTFOLIO_PRESETS"
+            :key="idx"
+            class="preset-item"
+            @click="loadPreset(idx)">
+            <span class="preset-item-label">{{ preset.label }}</span>
+            <span class="preset-item-desc">{{ preset.description }}</span>
+          </button>
+        </div>
+      </Transition>
     </div>
 
     <!-- Record Slot Bar -->
@@ -468,7 +623,10 @@ onUnmounted(() => { if (_urlTimer) clearTimeout(_urlTimer) })
         </div>
       </div>
 
-      <div v-if="!activeGroup.items.length" class="empty-hint">尚無項目，請從下方新增</div>
+      <div v-if="!activeGroup.items.length" class="empty-hint">
+        尚無項目，請從下方新增，或
+        <button class="empty-hint-link" @click="presetMenuOpen = true">載入範例組合</button>
+      </div>
 
       <!-- Add buttons row -->
       <div class="add-buttons-row">
@@ -524,6 +682,154 @@ onUnmounted(() => { if (_urlTimer) clearTimeout(_urlTimer) })
   font-size: 12px;
   color: #6b7280;
   margin-top: 4px;
+}
+
+/* ── Preset Bar ── */
+.preset-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 16px;
+  position: relative;
+}
+.preset-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.preset-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border: 1px solid rgba(96, 165, 250, 0.25);
+  border-radius: 8px;
+  background: rgba(96, 165, 250, 0.06);
+  color: #60a5fa;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.preset-toggle:hover {
+  background: rgba(96, 165, 250, 0.12);
+  border-color: rgba(96, 165, 250, 0.5);
+}
+.preset-divider {
+  width: 1px;
+  height: 20px;
+  background: #334155;
+  flex-shrink: 0;
+}
+.io-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.io-btn:hover {
+  background: rgba(148, 163, 184, 0.1);
+  border-color: rgba(148, 163, 184, 0.4);
+  color: #e2e8f0;
+}
+.hidden-input {
+  display: none;
+}
+.import-msg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+}
+.import-msg.ok {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.1);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+.import-msg.err {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+.import-msg-enter-active,
+.import-msg-leave-active {
+  transition: all 0.25s ease;
+}
+.import-msg-enter-from,
+.import-msg-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+.chevron {
+  transition: transform 0.25s;
+}
+.chevron.open {
+  transform: rotate(180deg);
+}
+.preset-menu {
+  width: 100%;
+  max-width: 420px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+.preset-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.preset-item:hover {
+  background: rgba(96, 165, 250, 0.08);
+  border-color: rgba(96, 165, 250, 0.2);
+}
+.preset-item-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e8eaed;
+  font-family: 'DM Sans', sans-serif;
+}
+.preset-item-desc {
+  font-size: 11px;
+  color: #6b7280;
+  font-family: 'DM Sans', sans-serif;
+  line-height: 1.4;
+}
+.preset-dropdown-enter-active,
+.preset-dropdown-leave-active {
+  transition: all 0.2s ease;
+}
+.preset-dropdown-enter-from,
+.preset-dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 
 .global-sliders {
@@ -816,6 +1122,21 @@ onUnmounted(() => { if (_urlTimer) clearTimeout(_urlTimer) })
   border-radius: 8px;
   margin-bottom: 16px;
 }
+.empty-hint-link {
+  background: none;
+  border: none;
+  color: #60a5fa;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  padding: 0;
+  transition: color 0.2s;
+}
+.empty-hint-link:hover {
+  color: #93bbfd;
+}
 
 /* ── Record Bar ── */
 .record-bar {
@@ -948,6 +1269,17 @@ onUnmounted(() => { if (_urlTimer) clearTimeout(_urlTimer) })
 }
 
 @media (max-width: 640px) {
+  .preset-actions {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .preset-divider {
+    display: none;
+  }
+  .io-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
   .global-sliders {
     flex-direction: column;
     gap: 0;

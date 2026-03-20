@@ -32,7 +32,7 @@ function inf(v: number, age: number): number {
 }
 
 type ViewMode = 'net' | 'diverging' | 'grouped'
-const viewMode = ref<ViewMode>('diverging')
+const viewMode = ref<ViewMode>('grouped')
 const includeOneTimeExpense = ref(true)
 
 const INCOME_COLORS = ['#34d399', '#10b981', '#059669', '#047857', '#065f46']
