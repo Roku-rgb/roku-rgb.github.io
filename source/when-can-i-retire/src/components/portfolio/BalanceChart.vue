@@ -15,7 +15,19 @@ import type { PortfolioYearRow } from '../../types/portfolio'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler)
 
-const props = defineProps<{ rows: PortfolioYearRow[] }>()
+const props = defineProps<{
+  rows: PortfolioYearRow[]
+  inflation: number
+  currentAge: number
+  isNominal: boolean
+}>()
+
+const emit = defineEmits<{ 'update:isNominal': [value: boolean] }>()
+
+function inflationFactor(age: number): number {
+  if (!props.isNominal) return 1
+  return Math.pow(1 + props.inflation / 100, age - props.currentAge)
+}
 
 const LMP_COLORS = ['#f59e0b', '#d97706', '#b45309', '#92400e', '#78350f']
 const RP_COLORS = ['#a78bfa', '#8b5cf6', '#7c3aed', '#6d28d9', '#5b21b6']
@@ -53,7 +65,7 @@ const chartData = computed(() => {
 
   const idleDataset = {
     label: '閒置資產',
-    data: props.rows.map(r => Math.round(r.idleAssets)),
+    data: props.rows.map(r => Math.round(r.idleAssets * inflationFactor(r.age))),
     borderColor: IDLE_COLOR,
     backgroundColor: 'transparent',
     borderWidth: 2,
@@ -66,7 +78,7 @@ const chartData = computed(() => {
     label: `LMP: ${findLabel('lmp', id)}`,
     data: props.rows.map(r => {
       const d = r.lmpDetails.find(x => x.id === id)
-      return d ? Math.round(d.balanceEnd) : 0
+      return d ? Math.round(d.balanceEnd * inflationFactor(r.age)) : 0
     }),
     borderColor: LMP_COLORS[i % LMP_COLORS.length],
     backgroundColor: 'transparent',
@@ -80,7 +92,7 @@ const chartData = computed(() => {
     label: `RP: ${findLabel('rp', id)}`,
     data: props.rows.map(r => {
       const d = r.rpDetails.find(x => x.id === id)
-      return d ? Math.round(d.balanceEnd) : 0
+      return d ? Math.round(d.balanceEnd * inflationFactor(r.age)) : 0
     }),
     borderColor: RP_COLORS[i % RP_COLORS.length],
     backgroundColor: 'transparent',
@@ -94,7 +106,7 @@ const chartData = computed(() => {
     label: `投資: ${findLabel('invest', id)}`,
     data: props.rows.map(r => {
       const d = r.investDetails.find(x => x.id === id)
-      return d ? Math.round(d.value) : 0
+      return d ? Math.round(d.value * inflationFactor(r.age)) : 0
     }),
     borderColor: INVEST_COLORS[i % INVEST_COLORS.length],
     backgroundColor: 'transparent',
@@ -137,11 +149,12 @@ const chartOptions = computed(() => ({
       titleFont: { size: 14, weight: 'bold' as const },
       bodyFont: { size: 12 },
       padding: 12,
+      filter: (item: { raw: unknown }) => item.raw !== 0,
       callbacks: {
         title: (items: { dataIndex: number }[]) => {
           const idx = items[0]?.dataIndex
           if (idx === undefined) return ''
-          return `${props.rows[idx].age} 歲`
+          return `${props.rows[idx].age} 歲(年末)`
         },
       },
     },
@@ -166,7 +179,11 @@ const legendItems = computed(() => {
     <div class="chart-header">
       <div class="chart-title">
         各群組餘額走勢
-        <span class="chart-unit">（單位：萬元，實質購買力）</span>
+        <span class="chart-unit">（單位：萬元，{{ isNominal ? '名目' : '實質購買力' }}）</span>
+      </div>
+      <div class="toggle-group">
+        <button class="toggle-btn" :class="{ active: !isNominal }" @click="emit('update:isNominal', false)">實質購買力</button>
+        <button class="toggle-btn" :class="{ active: isNominal }" @click="emit('update:isNominal', true)">名目</button>
       </div>
     </div>
     <div class="chart-wrapper">
@@ -209,6 +226,32 @@ const legendItems = computed(() => {
 .chart-unit {
   font-size: 11px;
   color: #555d6a;
+}
+.toggle-group {
+  display: flex;
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.toggle-btn {
+  padding: 4px 10px;
+  font-size: 11px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #6b7280;
+  background: transparent;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.toggle-btn.active {
+  background: #334155;
+  color: #e8eaed;
+}
+.toggle-btn:hover:not(.active) {
+  color: #94a3b8;
 }
 .chart-wrapper {
   height: 300px;

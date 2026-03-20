@@ -13,7 +13,19 @@ import type { PortfolioYearRow } from '../../types/portfolio'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend)
 
-const props = defineProps<{ rows: PortfolioYearRow[] }>()
+const props = defineProps<{
+  rows: PortfolioYearRow[]
+  inflation: number
+  currentAge: number
+  isNominal: boolean
+}>()
+
+const emit = defineEmits<{ 'update:isNominal': [value: boolean] }>()
+
+function inflationFactor(age: number): number {
+  if (!props.isNominal) return 1
+  return Math.pow(1 + props.inflation / 100, age - props.currentAge)
+}
 
 /** Check if any asset component is negative for a given row */
 function hasNegative(r: PortfolioYearRow): boolean {
@@ -33,13 +45,13 @@ const firstNegativeAge = computed(() => {
 const chartData = computed(() => {
   const labels = props.rows.map(r => r.age)
 
-  const idle = props.rows.map(r => Math.round(r.idleAssets))
+  const idle = props.rows.map(r => Math.round(r.idleAssets * inflationFactor(r.age)))
   const lmpTotal = props.rows.map(r =>
-    Math.round(r.lmpDetails.reduce((s, d) => s + d.balanceEnd, 0)))
+    Math.round(r.lmpDetails.reduce((s, d) => s + d.balanceEnd, 0) * inflationFactor(r.age)))
   const rpTotal = props.rows.map(r =>
-    Math.round(r.rpDetails.reduce((s, d) => s + d.balanceEnd, 0)))
+    Math.round(r.rpDetails.reduce((s, d) => s + d.balanceEnd, 0) * inflationFactor(r.age)))
   const invTotal = props.rows.map(r =>
-    Math.round(r.investDetails.reduce((s, d) => s + d.value, 0)))
+    Math.round(r.investDetails.reduce((s, d) => s + d.value, 0) * inflationFactor(r.age)))
 
   // Sum of all negative components per year (goes from 0 downward)
   const negSum = props.rows.map((_, i) => {
@@ -151,7 +163,7 @@ const chartOptions = computed(() => ({
         title: (items: { dataIndex: number }[]) => {
           const idx = items[0]?.dataIndex
           if (idx === undefined) return ''
-          return `${props.rows[idx].age} 歲`
+          return `${props.rows[idx].age} 歲(年末)`
         },
         label: (ctx: { dataset: { label?: string }; parsed: { y: number } }) => {
           const label = ctx.dataset.label ?? ''
@@ -164,11 +176,12 @@ const chartOptions = computed(() => ({
           const idx = items[0]?.dataIndex
           if (idx === undefined) return ''
           const r = props.rows[idx]
+          const f = inflationFactor(r.age)
           const total = Math.round(
-            r.idleAssets +
+            (r.idleAssets +
             r.lmpDetails.reduce((s, d) => s + d.balanceEnd, 0) +
             r.rpDetails.reduce((s, d) => s + d.balanceEnd, 0) +
-            r.investDetails.reduce((s, d) => s + d.value, 0)
+            r.investDetails.reduce((s, d) => s + d.value, 0)) * f
           )
           return `\n 總資產淨值：${total.toLocaleString()} 萬`
         },
@@ -191,7 +204,11 @@ const legendItems = [
     <div class="chart-header">
       <div class="chart-title">
         總資產組成
-        <span class="chart-unit">（單位：萬元，實質購買力）</span>
+        <span class="chart-unit">（單位：萬元，{{ isNominal ? '名目' : '實質購買力' }}）</span>
+      </div>
+      <div class="toggle-group">
+        <button class="toggle-btn" :class="{ active: !isNominal }" @click="emit('update:isNominal', false)">實質購買力</button>
+        <button class="toggle-btn" :class="{ active: isNominal }" @click="emit('update:isNominal', true)">名目</button>
       </div>
     </div>
     <div class="chart-wrapper">
@@ -234,6 +251,32 @@ const legendItems = [
 .chart-unit {
   font-size: 11px;
   color: #555d6a;
+}
+.toggle-group {
+  display: flex;
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.toggle-btn {
+  padding: 4px 10px;
+  font-size: 11px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #6b7280;
+  background: transparent;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.toggle-btn.active {
+  background: #334155;
+  color: #e8eaed;
+}
+.toggle-btn:hover:not(.active) {
+  color: #94a3b8;
 }
 .chart-wrapper {
   height: 300px;

@@ -2,7 +2,19 @@
 import { computed, ref } from 'vue'
 import type { PortfolioYearRow } from '../../types/portfolio'
 
-const props = defineProps<{ rows: PortfolioYearRow[] }>()
+const props = defineProps<{
+  rows: PortfolioYearRow[]
+  inflation: number
+  currentAge: number
+  isNominal: boolean
+}>()
+
+const emit = defineEmits<{ 'update:isNominal': [value: boolean] }>()
+
+function inflationFactor(age: number): number {
+  if (!props.isNominal) return 1
+  return Math.pow(1 + props.inflation / 100, age - props.currentAge)
+}
 
 const expanded = ref(false)
 const displayRows = computed(() =>
@@ -34,12 +46,19 @@ function findLabel(rows: PortfolioYearRow[], type: 'income' | 'lmp' | 'rp', id: 
   return id
 }
 
-const fmt = (v: number) => Math.round(v).toLocaleString()
+const fmtRaw = (v: number) => Math.round(v).toLocaleString()
+const fmt = (v: number, age: number) => fmtRaw(v * inflationFactor(age))
 </script>
 
 <template>
   <div v-if="rows.length" class="table-container">
-    <div class="table-title">詳細現金流表格<span class="table-unit">（單位：萬元）</span></div>
+    <div class="table-header">
+      <div class="table-title">詳細現金流表格<span class="table-unit">（單位：萬元，{{ isNominal ? '名目' : '實質購買力' }}）</span></div>
+      <div class="toggle-group">
+        <button class="toggle-btn" :class="{ active: !isNominal }" @click="emit('update:isNominal', false)">實質購買力</button>
+        <button class="toggle-btn" :class="{ active: isNominal }" @click="emit('update:isNominal', true)">名目</button>
+      </div>
+    </div>
     <div class="table-scroll">
       <table>
         <thead>
@@ -68,25 +87,25 @@ const fmt = (v: number) => Math.round(v).toLocaleString()
           <tr v-for="r in displayRows" :key="r.age">
             <td class="sticky-col">{{ r.age }}</td>
             <td v-for="id in incomeIds" :key="'i-' + id" class="col-income">
-              {{ fmt(r.incomes.find(x => x.id === id)?.amount ?? 0) }}
+              {{ fmt(r.incomes.find(x => x.id === id)?.amount ?? 0, r.age) }}
             </td>
             <td v-for="id in lmpIds" :key="'l-' + id" class="col-lmp">
-              {{ fmt(r.lmpDetails.find(x => x.id === id)?.withdraw ?? 0) }}
+              {{ fmt(r.lmpDetails.find(x => x.id === id)?.withdraw ?? 0, r.age) }}
             </td>
             <td v-for="id in lmpIds" :key="'lb-' + id" class="col-lmp-bal">
-              {{ fmt(r.lmpDetails.find(x => x.id === id)?.balanceEnd ?? 0) }}
+              {{ fmt(r.lmpDetails.find(x => x.id === id)?.balanceEnd ?? 0, r.age) }}
             </td>
             <td v-for="id in rpIds" :key="'r-' + id" class="col-rp">
-              {{ fmt(r.rpDetails.find(x => x.id === id)?.withdraw ?? 0) }}
+              {{ fmt(r.rpDetails.find(x => x.id === id)?.withdraw ?? 0, r.age) }}
             </td>
             <td v-for="id in rpIds" :key="'rb-' + id" class="col-rp-bal">
-              {{ fmt(r.rpDetails.find(x => x.id === id)?.balanceEnd ?? 0) }}
+              {{ fmt(r.rpDetails.find(x => x.id === id)?.balanceEnd ?? 0, r.age) }}
             </td>
             <td class="col-idle" :class="{ positive: r.idleAssets >= 0, negative: r.idleAssets < 0 }">
-              {{ fmt(r.idleAssets) }}
+              {{ fmt(r.idleAssets, r.age) }}
             </td>
             <td class="col-net" :class="{ positive: r.netFlow >= 0, negative: r.netFlow < 0 }">
-              {{ fmt(r.netFlow) }}
+              {{ fmt(r.netFlow, r.age) }}
             </td>
           </tr>
         </tbody>
@@ -107,15 +126,46 @@ const fmt = (v: number) => Math.round(v).toLocaleString()
   margin-bottom: 24px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
 }
+.table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
 .table-title {
   font-size: 13px;
   color: #8a919e;
   font-weight: 500;
-  margin-bottom: 12px;
 }
 .table-unit {
   font-size: 11px;
   color: #555d6a;
+}
+.toggle-group {
+  display: flex;
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.toggle-btn {
+  padding: 4px 10px;
+  font-size: 11px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #6b7280;
+  background: transparent;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.toggle-btn.active {
+  background: #334155;
+  color: #e8eaed;
+}
+.toggle-btn:hover:not(.active) {
+  color: #94a3b8;
 }
 .table-scroll {
   overflow-x: auto;

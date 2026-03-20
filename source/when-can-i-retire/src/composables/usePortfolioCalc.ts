@@ -101,6 +101,11 @@ function simulate(
   const rows: PortfolioYearRow[] = []
 
   for (let age = minAge; age <= maxAge; age++) {
+    // Idle cash earns 0% nominal → loses purchasing power in real terms
+    if (age > minAge) {
+      idleAssets /= (1 + inf)
+    }
+
     // Investment start: fund initial value from idle assets
     for (const inv of investments) {
       if (age === inv.fromAge) {
@@ -140,16 +145,22 @@ function simulate(
     const incomes = incomeSources.map(s => {
       if (s.isOneTime) {
         if (age !== s.occurAge) return { id: s.id, label: s.label, amount: 0, isOneTime: true }
-        return { id: s.id, label: s.label, amount: s.annualAmount, isOneTime: true }
+        const realAmount = s.amountBasis === 'nominal'
+          ? s.annualAmount / Math.pow(1 + inf, s.occurAge - currentAge)
+          : s.annualAmount
+        return { id: s.id, label: s.label, amount: realAmount, isOneTime: true }
       }
       if (age < s.fromAge || age > s.toAge)
         return { id: s.id, label: s.label, amount: 0, isOneTime: false }
       const k = age - s.fromAge
+      const baseReal = s.amountBasis === 'nominal'
+        ? s.annualAmount / Math.pow(1 + inf, s.fromAge - currentAge)
+        : s.annualAmount
       const realGrowth =
         s.growthBasis === 'nominal'
           ? (1 + s.growthRate / 100) / (1 + inf) - 1
           : s.growthRate / 100
-      const amount = s.annualAmount * Math.pow(1 + realGrowth, k)
+      const amount = baseReal * Math.pow(1 + realGrowth, k)
       return { id: s.id, label: s.label, amount, isOneTime: false }
     })
     const totalIncome = incomes.reduce((s, i) => s + i.amount, 0)
@@ -159,16 +170,22 @@ function simulate(
     const expenses = expenseSources.map(s => {
       if (s.isOneTime) {
         if (age !== s.occurAge) return { id: s.id, label: s.label, amount: 0, isOneTime: true }
-        return { id: s.id, label: s.label, amount: s.annualAmount, isOneTime: true }
+        const realAmount = s.amountBasis === 'nominal'
+          ? s.annualAmount / Math.pow(1 + inf, s.occurAge - currentAge)
+          : s.annualAmount
+        return { id: s.id, label: s.label, amount: realAmount, isOneTime: true }
       }
       if (age < s.fromAge || age > s.toAge)
         return { id: s.id, label: s.label, amount: 0, isOneTime: false }
       const k = age - s.fromAge
+      const baseReal = s.amountBasis === 'nominal'
+        ? s.annualAmount / Math.pow(1 + inf, s.fromAge - currentAge)
+        : s.annualAmount
       const realGrowth =
         s.growthBasis === 'nominal'
           ? (1 + s.growthRate / 100) / (1 + inf) - 1
           : s.growthRate / 100
-      const amount = s.annualAmount * Math.pow(1 + realGrowth, k)
+      const amount = baseReal * Math.pow(1 + realGrowth, k)
       return { id: s.id, label: s.label, amount, isOneTime: false }
     })
     const totalExpenseFlow = expenses.reduce((s, e) => s + e.amount, 0)
@@ -179,7 +196,10 @@ function simulate(
       const bal = lmpBal.get(g.id) ?? 0
       if (age < g.fromAge || age > g.toAge)
         return { id: g.id, label: g.label, withdraw: 0, balanceEnd: bal }
-      const w = Math.min(g.annualWithdraw, bal)
+      const realW = g.withdrawBasis === 'nominal'
+        ? g.annualWithdraw / Math.pow(1 + inf, age - currentAge)
+        : g.annualWithdraw
+      const w = Math.min(realW, bal)
       const rr = toReal(g.rate, g.rateBasis, inflation)
       const newBal = Math.max(0, (bal - w) * (1 + rr))
       lmpBal.set(g.id, newBal)
@@ -191,7 +211,10 @@ function simulate(
       const bal = rpBal.get(g.id) ?? 0
       if (age < g.fromAge || age > g.toAge)
         return { id: g.id, label: g.label, withdraw: 0, balanceEnd: bal }
-      const w = Math.min(g.annualWithdraw, bal)
+      const realW = g.withdrawBasis === 'nominal'
+        ? g.annualWithdraw / Math.pow(1 + inf, age - currentAge)
+        : g.annualWithdraw
+      const w = Math.min(realW, bal)
       const rr = toReal(g.rate, g.rateBasis, inflation)
       const newBal = Math.max(0, (bal - w) * (1 + rr))
       rpBal.set(g.id, newBal)
@@ -257,23 +280,31 @@ export function usePortfolioCalc(
   return computed<PortfolioResult>(() => {
     const inf = inflation.value
 
-    const lmpReq = lmpGroups.value.map(g => ({
-      id: g.id,
-      label: g.label,
-      requiredValue: calcGroupRequired(
-        g.annualWithdraw, g.withdrawBasis, g.rate, g.rateBasis,
-        g.fromAge, g.toAge, inf,
-      ),
-    }))
+    const curAge = currentAge.value
+    const infDec = inf / 100
 
-    const rpReq = rpGroups.value.map(g => ({
-      id: g.id,
-      label: g.label,
-      requiredValue: calcGroupRequired(
+    const lmpReq = lmpGroups.value.map(g => {
+      const pv = calcGroupRequired(
         g.annualWithdraw, g.withdrawBasis, g.rate, g.rateBasis,
         g.fromAge, g.toAge, inf,
-      ),
-    }))
+      )
+      // Nominal PV is in fromAge-frame; deflate to currentAge-frame
+      const deflator = g.withdrawBasis === 'nominal'
+        ? Math.pow(1 + infDec, g.fromAge - curAge)
+        : 1
+      return { id: g.id, label: g.label, requiredValue: pv / deflator }
+    })
+
+    const rpReq = rpGroups.value.map(g => {
+      const pv = calcGroupRequired(
+        g.annualWithdraw, g.withdrawBasis, g.rate, g.rateBasis,
+        g.fromAge, g.toAge, inf,
+      )
+      const deflator = g.withdrawBasis === 'nominal'
+        ? Math.pow(1 + infDec, g.fromAge - curAge)
+        : 1
+      return { id: g.id, label: g.label, requiredValue: pv / deflator }
+    })
 
     const investRes: InvestmentResult[] = investments.value.map(inv => ({
       id: inv.id,

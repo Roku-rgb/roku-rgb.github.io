@@ -42,39 +42,9 @@ const groupTabs = ref<GroupTab[]>([
   {
     id: uid(), label: '薪水',
     items: [
-      { type: 'income', data: { id: uid(), label: '薪資收入', annualAmount: 80, amountBasis: 'real', growthRate: 1, growthBasis: 'real', fromAge: 30, toAge: 49, isOneTime: false, occurAge: 30 } },
-      { type: 'expense', data: { id: uid(), label: '基本生活費-買房前', annualAmount: 36, amountBasis: 'real', growthRate: 0, growthBasis: 'real', fromAge: 30, toAge: 44, isOneTime: false, occurAge: 30 } },
-      { type: 'expense', data: { id: uid(), label: '基本生活費-買房後', annualAmount: 24, amountBasis: 'real', growthRate: 0, growthBasis: 'real', fromAge: 45, toAge: 85, isOneTime: false, occurAge: 30 } },
-      { type: 'expense', data: { id: uid(), label: '旅遊基金', annualAmount: 18, amountBasis: 'real', growthRate: 0, growthBasis: 'real', fromAge: 30, toAge: 85, isOneTime: false, occurAge: 30 } },
+      { type: 'income', data: { id: uid(), label: '薪資收入', annualAmount: 0, amountBasis: 'nominal', growthRate: 0, growthBasis: 'nominal', fromAge: 31, toAge: 49, isOneTime: false, occurAge: 30 } },
     ],
-  },
-  {
-    id: uid(), label: '買房',
-    items: [
-      { type: 'expense', data: { id: uid(), label: '買房頭期款', annualAmount: 100, amountBasis: 'real', growthRate: 0, growthBasis: 'real', fromAge: 45, toAge: 45, isOneTime: true, occurAge: 45 } },
-      { type: 'expense', data: { id: uid(), label: '房貸', annualAmount: 18, amountBasis: 'real', growthRate: 0, growthBasis: 'real', fromAge: 45, toAge: 74, isOneTime: false, occurAge: 40 } },
-      { type: 'invest', data: { id: uid(), label: '頭期款投資', rate: 6, rateBasis: 'real', initialValue: 0, monthlyContribution: 0.4, fromAge: 30, toAge: 45 } },
-    ],
-  },
-  { id: uid(), label: '40+', items: [] },
-  { 
-    id: uid(), label: '50 退休計畫', 
-    items: [
-      { type: 'lmp', data: { id: uid(), label: 'LMP 年金', rate: 1.5, rateBasis: 'real', annualWithdraw: 48, withdrawBasis: 'real', fromAge: 50, toAge: 64 } },
-      { type: 'rp', data: { id: uid(), label: 'RP 額外年金', rate: 6, rateBasis: 'real', annualWithdraw: 12, withdrawBasis: 'real', fromAge: 50, toAge: 64 } },
-      { type: 'invest', data: { id: uid(), label: '提早退休金投資1', rate: 6, rateBasis: 'real', initialValue: 0, monthlyContribution: 1.75, fromAge: 30, toAge: 50 } },
-    ] 
-  },
-  {
-    id: uid(), label: '65+',
-    items: [
-      { type: 'income', data: { id: uid(), label: '勞保年金', annualAmount: 24, amountBasis: 'real', growthRate: 0, growthBasis: 'real', fromAge: 65, toAge: 85, isOneTime: false, occurAge: 65 } },
-      { type: 'lmp', data: { id: uid(), label: 'LMP 年金', rate: 1.5, rateBasis: 'real', annualWithdraw: 48, withdrawBasis: 'real', fromAge: 65, toAge: 85 } },
-      { type: 'rp', data: { id: uid(), label: 'RP 額外年金', rate: 6, rateBasis: 'real', annualWithdraw: 12, withdrawBasis: 'real', fromAge: 65, toAge: 85 } },
-      { type: 'invest', data: { id: uid(), label: '退休金投資1', rate: 6, rateBasis: 'real', initialValue: 0, monthlyContribution: 0.9, fromAge: 30, toAge: 55 } },
-      { type: 'invest', data: { id: uid(), label: '退休金投資2', rate: 6, rateBasis: 'real', initialValue: 571, monthlyContribution: 0, fromAge: 55, toAge: 65 } },
-    ],
-  },
+  }
 ])
 
 const activeGroupIdx = ref(0)
@@ -147,6 +117,7 @@ function onTabDragEnd() {
 const currentAge = ref(30)
 const totalAssets = ref(100)
 const inflation = ref(2)
+const isNominal = ref(false)
 
 /* ── Record Slots ── */
 const { activeSlot, slotFilled, slotDirty, switchSlot, resetSlot } = usePortfolioRecordSlots({
@@ -177,16 +148,16 @@ function countByType(group: GroupTab, type: PortfolioItem['type']): number {
 function addIncome(group: GroupTab) {
   if (countByType(group, 'income') >= MAX_ITEMS_PER_TYPE) return
   group.items.push({ type: 'income', data: {
-    id: uid(), label: '新收入', annualAmount: 0, amountBasis: 'real',
-    growthRate: 0, growthBasis: 'real', fromAge: 65, toAge: 85,
+    id: uid(), label: '新收入', annualAmount: 0, amountBasis: 'nominal',
+    growthRate: 0, growthBasis: 'nominal', fromAge: 65, toAge: 85,
     isOneTime: false, occurAge: 65,
   } })
 }
 function addExpense(group: GroupTab) {
   if (countByType(group, 'expense') >= MAX_ITEMS_PER_TYPE) return
   group.items.push({ type: 'expense', data: {
-    id: uid(), label: '新支出', annualAmount: 0, amountBasis: 'real',
-    growthRate: 0, growthBasis: 'real', fromAge: 65, toAge: 85,
+    id: uid(), label: '新支出', annualAmount: 0, amountBasis: 'nominal',
+    growthRate: 0, growthBasis: 'nominal', fromAge: 65, toAge: 85,
     isOneTime: false, occurAge: 65,
   } })
 }
@@ -301,7 +272,7 @@ const TYPE_META: Record<string, { label: string; color: string }> = {
     <SliderGroup title="個人基本設定" color="#60a5fa">
       <div class="global-sliders">
         <SliderInput v-model="currentAge" label="目前年齡" :min="20" :max="80" :step="1" unit=" 歲" />
-        <SliderInput v-model="totalAssets" label="現有資產總額" :min="0" :max="5000" :step="1" unit=" 萬" :format="fmtMoney" />
+        <SliderInput v-model="totalAssets" label="現有資產總額" :min="0" :max="2000" :step="1" unit=" 萬" :format="fmtMoney" />
         <SliderInput v-model="inflation" label="預估通膨率" :min="0" :max="6" :step="0.1" unit="%" />
       </div>
     </SliderGroup>
@@ -440,11 +411,11 @@ const TYPE_META: Record<string, { label: string; color: string }> = {
     </div>
 
     <!-- Charts -->
-    <PortfolioChart :rows="result.rows" />
-    <BalanceChart :rows="result.rows" />
-    <TotalAssetChart :rows="result.rows" />
-    <AssetStackedBarChart :rows="result.rows" />
-    <PortfolioTable :rows="result.rows" />
+    <PortfolioChart :rows="result.rows" :inflation="inflation" :current-age="currentAge" v-model:is-nominal="isNominal" />
+    <BalanceChart :rows="result.rows" :inflation="inflation" :current-age="currentAge" v-model:is-nominal="isNominal" />
+    <TotalAssetChart :rows="result.rows" :inflation="inflation" :current-age="currentAge" v-model:is-nominal="isNominal" />
+    <AssetStackedBarChart :rows="result.rows" :inflation="inflation" :current-age="currentAge" v-model:is-nominal="isNominal" />
+    <PortfolioTable :rows="result.rows" :inflation="inflation" :current-age="currentAge" v-model:is-nominal="isNominal" />
 
     <!-- Footer -->
     <div class="footer">本工具僅供參考，不構成投資建議</div>

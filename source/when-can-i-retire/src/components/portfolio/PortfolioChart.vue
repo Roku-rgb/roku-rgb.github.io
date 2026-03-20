@@ -13,7 +13,23 @@ import type { PortfolioYearRow } from '../../types/portfolio'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend)
 
-const props = defineProps<{ rows: PortfolioYearRow[] }>()
+const props = defineProps<{
+  rows: PortfolioYearRow[]
+  inflation: number
+  currentAge: number
+  isNominal: boolean
+}>()
+
+const emit = defineEmits<{ 'update:isNominal': [value: boolean] }>()
+
+function inflationFactor(age: number): number {
+  if (!props.isNominal) return 1
+  return Math.pow(1 + props.inflation / 100, age - props.currentAge)
+}
+
+function inf(v: number, age: number): number {
+  return Math.round(v * inflationFactor(age))
+}
 
 type ViewMode = 'net' | 'diverging' | 'grouped'
 const viewMode = ref<ViewMode>('diverging')
@@ -76,7 +92,7 @@ function findLabel(rows: PortfolioYearRow[], type: 'income' | 'expense' | 'inves
 const chartDataDiverging = computed(() => {
   const incomeDatasets = posIncomeIds.value.map((id, i) => ({
     label: findLabel(props.rows, 'income', id),
-    data: props.rows.map(r => Math.round(r.incomes.find(x => x.id === id)?.amount ?? 0)),
+    data: props.rows.map(r => inf(r.incomes.find(x => x.id === id)?.amount ?? 0, r.age)),
     backgroundColor: INCOME_COLORS[i % INCOME_COLORS.length],
     borderRadius: 2,
     stack: 'income',
@@ -84,7 +100,7 @@ const chartDataDiverging = computed(() => {
 
   const lmpDatasets = allLmpIds.value.map((id, i) => ({
     label: findLabel(props.rows, 'lmp', id),
-    data: props.rows.map(r => Math.round(r.lmpDetails.find(x => x.id === id)?.withdraw ?? 0)),
+    data: props.rows.map(r => inf(r.lmpDetails.find(x => x.id === id)?.withdraw ?? 0, r.age)),
     backgroundColor: LMP_COLORS[i % LMP_COLORS.length],
     borderRadius: 2,
     stack: 'income',
@@ -92,7 +108,7 @@ const chartDataDiverging = computed(() => {
 
   const rpDatasets = allRpIds.value.map((id, i) => ({
     label: findLabel(props.rows, 'rp', id),
-    data: props.rows.map(r => Math.round(r.rpDetails.find(x => x.id === id)?.withdraw ?? 0)),
+    data: props.rows.map(r => inf(r.rpDetails.find(x => x.id === id)?.withdraw ?? 0, r.age)),
     backgroundColor: RP_COLORS[i % RP_COLORS.length],
     borderRadius: 2,
     stack: 'income',
@@ -100,7 +116,7 @@ const chartDataDiverging = computed(() => {
 
   const negIncomeDatasets = negIncomeIds.value.map((id, i) => ({
     label: findLabel(props.rows, 'income', id),
-    data: props.rows.map(r => Math.round(r.incomes.find(x => x.id === id)?.amount ?? 0)),
+    data: props.rows.map(r => inf(r.incomes.find(x => x.id === id)?.amount ?? 0, r.age)),
     backgroundColor: EXPENSE_COLORS[i % EXPENSE_COLORS.length],
     borderRadius: 2,
     stack: 'expense',
@@ -108,7 +124,7 @@ const chartDataDiverging = computed(() => {
 
   const expenseDatasets = allExpenseIds.value.map((id, i) => ({
     label: findLabel(props.rows, 'expense', id),
-    data: props.rows.map(r => -Math.round(r.expenses.find(x => x.id === id)?.amount ?? 0)),
+    data: props.rows.map(r => -inf(r.expenses.find(x => x.id === id)?.amount ?? 0, r.age)),
     backgroundColor: EXPENSE_COLORS[(negIncomeIds.value.length + i) % EXPENSE_COLORS.length],
     borderRadius: 2,
     stack: 'expense',
@@ -116,7 +132,7 @@ const chartDataDiverging = computed(() => {
 
   const investContribDatasets = allInvestContribIds.value.map((id, i) => ({
     label: findLabel(props.rows, 'investContrib', id),
-    data: props.rows.map(r => -Math.round(r.investContributions.find(x => x.id === id)?.amount ?? 0)),
+    data: props.rows.map(r => -inf(r.investContributions.find(x => x.id === id)?.amount ?? 0, r.age)),
     backgroundColor: INVEST_CONTRIB_COLORS[i % INVEST_CONTRIB_COLORS.length],
     borderRadius: 2,
     stack: 'expense',
@@ -135,7 +151,7 @@ const chartDataNet = computed(() => ({
   labels: labels.value,
   datasets: [{
     label: '淨現金流',
-    data: props.rows.map(r => Math.round(recurringNet(r))),
+    data: props.rows.map(r => inf(recurringNet(r), r.age)),
     backgroundColor: props.rows.map(r => recurringNet(r) >= 0 ? '#34d399' : '#f87171'),
     borderRadius: 2,
   }],
@@ -144,7 +160,7 @@ const chartDataNet = computed(() => ({
 const chartDataGrouped = computed(() => {
   const incomeDatasets = posIncomeIds.value.map((id, i) => ({
     label: findLabel(props.rows, 'income', id),
-    data: props.rows.map(r => Math.round(r.incomes.find(x => x.id === id)?.amount ?? 0)),
+    data: props.rows.map(r => inf(r.incomes.find(x => x.id === id)?.amount ?? 0, r.age)),
     backgroundColor: INCOME_COLORS[i % INCOME_COLORS.length],
     borderRadius: 2,
     stack: 'income',
@@ -152,7 +168,7 @@ const chartDataGrouped = computed(() => {
 
   const lmpDatasets = allLmpIds.value.map((id, i) => ({
     label: findLabel(props.rows, 'lmp', id),
-    data: props.rows.map(r => Math.round(r.lmpDetails.find(x => x.id === id)?.withdraw ?? 0)),
+    data: props.rows.map(r => inf(r.lmpDetails.find(x => x.id === id)?.withdraw ?? 0, r.age)),
     backgroundColor: LMP_COLORS[i % LMP_COLORS.length],
     borderRadius: 2,
     stack: 'income',
@@ -160,7 +176,7 @@ const chartDataGrouped = computed(() => {
 
   const rpDatasets = allRpIds.value.map((id, i) => ({
     label: findLabel(props.rows, 'rp', id),
-    data: props.rows.map(r => Math.round(r.rpDetails.find(x => x.id === id)?.withdraw ?? 0)),
+    data: props.rows.map(r => inf(r.rpDetails.find(x => x.id === id)?.withdraw ?? 0, r.age)),
     backgroundColor: RP_COLORS[i % RP_COLORS.length],
     borderRadius: 2,
     stack: 'income',
@@ -168,7 +184,7 @@ const chartDataGrouped = computed(() => {
 
   const negIncomeDatasets = negIncomeIds.value.map((id, i) => ({
     label: findLabel(props.rows, 'income', id),
-    data: props.rows.map(r => -Math.round(r.incomes.find(x => x.id === id)?.amount ?? 0)),
+    data: props.rows.map(r => -inf(r.incomes.find(x => x.id === id)?.amount ?? 0, r.age)),
     backgroundColor: EXPENSE_COLORS[i % EXPENSE_COLORS.length],
     borderRadius: 2,
     stack: 'expense',
@@ -176,7 +192,7 @@ const chartDataGrouped = computed(() => {
 
   const expenseDatasets = allExpenseIds.value.map((id, i) => ({
     label: findLabel(props.rows, 'expense', id),
-    data: props.rows.map(r => Math.round(r.expenses.find(x => x.id === id)?.amount ?? 0)),
+    data: props.rows.map(r => inf(r.expenses.find(x => x.id === id)?.amount ?? 0, r.age)),
     backgroundColor: EXPENSE_COLORS[(negIncomeIds.value.length + i) % EXPENSE_COLORS.length],
     borderRadius: 2,
     stack: 'expense',
@@ -184,7 +200,7 @@ const chartDataGrouped = computed(() => {
 
   const investContribDatasets = allInvestContribIds.value.map((id, i) => ({
     label: findLabel(props.rows, 'investContrib', id),
-    data: props.rows.map(r => Math.round(r.investContributions.find(x => x.id === id)?.amount ?? 0)),
+    data: props.rows.map(r => inf(r.investContributions.find(x => x.id === id)?.amount ?? 0, r.age)),
     backgroundColor: INVEST_CONTRIB_COLORS[i % INVEST_CONTRIB_COLORS.length],
     borderRadius: 2,
     stack: 'expense',
@@ -235,18 +251,19 @@ const chartOptions = computed(() => ({
         title: (items: { dataIndex: number }[]) => {
           const idx = items[0]?.dataIndex
           if (idx === undefined) return ''
-          return `${props.rows[idx].age} 歲`
+          return `${props.rows[idx].age} 歲(年末)`
         },
         afterBody: (items: { dataIndex: number }[]) => {
           const idx = items[0]?.dataIndex
           if (idx === undefined) return []
           const r = props.rows[idx]
+          const f = inflationFactor(r.age)
           const recurring = r.incomes.filter(i => !i.isOneTime)
           const posIncome = recurring.reduce((s, i) => s + Math.max(0, i.amount), 0)
           const negIncome = -recurring.reduce((s, i) => s + Math.min(0, i.amount), 0)
           const recurringExpense = r.expenses.filter(e => !e.isOneTime).reduce((s, e) => s + e.amount, 0)
-          const chartIncome = posIncome + r.totalLmpWithdraw + r.totalRpWithdraw
-          const chartExpense = negIncome + recurringExpense + r.totalInvestContribution
+          const chartIncome = (posIncome + r.totalLmpWithdraw + r.totalRpWithdraw) * f
+          const chartExpense = (negIncome + recurringExpense + r.totalInvestContribution) * f
           return [
             `收入合計：${Math.round(chartIncome).toLocaleString()} 萬`,
             `支出合計：${Math.round(chartExpense).toLocaleString()} 萬`,
@@ -287,12 +304,18 @@ const legendItems = computed(() => {
     <div class="chart-header">
       <div class="chart-title">
         合計現金流
-        <span class="chart-unit">（單位：萬元，實質購買力）</span>
+        <span class="chart-unit">（單位：萬元，{{ isNominal ? '名目' : '實質購買力' }}）</span>
       </div>
-      <div class="toggle-group">
-        <button class="toggle-btn" :class="{ active: viewMode === 'diverging' }" @click="viewMode = 'diverging'">收支分離</button>
-        <button class="toggle-btn" :class="{ active: viewMode === 'grouped' }" @click="viewMode = 'grouped'">收支並排</button>
-        <button class="toggle-btn" :class="{ active: viewMode === 'net' }" @click="viewMode = 'net'">淨額</button>
+      <div class="toggle-row">
+        <div class="toggle-group">
+          <button class="toggle-btn" :class="{ active: viewMode === 'diverging' }" @click="viewMode = 'diverging'">收支分離</button>
+          <button class="toggle-btn" :class="{ active: viewMode === 'grouped' }" @click="viewMode = 'grouped'">收支並排</button>
+          <button class="toggle-btn" :class="{ active: viewMode === 'net' }" @click="viewMode = 'net'">淨額</button>
+        </div>
+        <div class="toggle-group">
+          <button class="toggle-btn" :class="{ active: !isNominal }" @click="emit('update:isNominal', false)">實質購買力</button>
+          <button class="toggle-btn" :class="{ active: isNominal }" @click="emit('update:isNominal', true)">名目</button>
+        </div>
       </div>
     </div>
     <div class="chart-wrapper">
@@ -333,6 +356,11 @@ const legendItems = computed(() => {
 .chart-unit {
   font-size: 11px;
   color: #555d6a;
+}
+.toggle-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 .toggle-group {
   display: flex;
