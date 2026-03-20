@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import type { IncomeSource, ExpenseSource, Investment, LmpGroup, RpGroup, GroupTab, PortfolioItem } from '../types/portfolio'
 import { usePortfolioCalc } from '../composables/usePortfolioCalc'
 import { usePortfolioRecordSlots } from '../composables/usePortfolioRecordSlots'
 import { fmtMoney } from '../utils/format'
+import { encodePortfolioState, decodePortfolioState, getPortfolioHashData } from '../utils/urlState'
 import SliderInput from '../components/common/SliderInput.vue'
 import SliderGroup from '../components/common/SliderGroup.vue'
 import IncomeSourceCard from '../components/portfolio/IncomeSourceCard.vue'
@@ -37,8 +38,12 @@ function syncNextId(snap: { groupTabs: GroupTab[] }) {
   if (max >= nextId) nextId = max + 1
 }
 
+/* ── Restore from URL ── */
+const _urlHashData = getPortfolioHashData()
+const _urlState = _urlHashData ? decodePortfolioState(_urlHashData, uid) : null
+
 /* ── Group Tabs ── */
-const groupTabs = ref<GroupTab[]>([
+const groupTabs = ref<GroupTab[]>(_urlState?.groupTabs ?? [
   {
     id: uid(), label: '薪水',
     items: [
@@ -114,9 +119,9 @@ function onTabDragEnd() {
 }
 
 /* ── Global Parameters ── */
-const currentAge = ref(30)
-const totalAssets = ref(100)
-const inflation = ref(2)
+const currentAge = ref(_urlState?.currentAge ?? 30)
+const totalAssets = ref(_urlState?.totalAssets ?? 100)
+const inflation = ref(_urlState?.inflation ?? 2)
 const isNominal = ref(false)
 
 /* ── Record Slots ── */
@@ -225,6 +230,23 @@ const TYPE_META: Record<string, { label: string; color: string }> = {
   lmp:     { label: 'LMP',  color: '#f59e0b' },
   rp:      { label: 'RP',   color: '#a78bfa' },
 }
+
+/* ── Sync state → URL hash (debounced, replaceState to avoid history spam) ── */
+let _urlTimer: ReturnType<typeof setTimeout> | null = null
+watch(
+  [currentAge, totalAssets, inflation, groupTabs],
+  () => {
+    if (_urlTimer) clearTimeout(_urlTimer)
+    _urlTimer = setTimeout(() => {
+      const encoded = encodePortfolioState(
+        currentAge.value, totalAssets.value, inflation.value, groupTabs.value,
+      )
+      history.replaceState(null, '', `#portfolio/${encoded}`)
+    }, 500)
+  },
+  { deep: true },
+)
+onUnmounted(() => { if (_urlTimer) clearTimeout(_urlTimer) })
 </script>
 
 <template>
