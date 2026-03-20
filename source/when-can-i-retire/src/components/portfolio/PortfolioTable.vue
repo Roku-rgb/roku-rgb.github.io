@@ -421,8 +421,8 @@ function fmtSum(v: number): string {
   overflow-x: auto;
 }
 table {
-  width: 100%;
-  table-layout: fixed;
+  min-width: 100%;
+  width: max-content;
   border-collapse: collapse;
   font-size: 12px;
   font-family: 'Space Mono', monospace;
