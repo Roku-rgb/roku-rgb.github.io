@@ -6,14 +6,14 @@ import {
 } from "../composables/useRetirementCalc";
 import { useWithdrawSchedule } from "../composables/useWithdrawSchedule";
 import { fmtMoney } from "../utils/format";
-import ResultBanner from "../components/ResultBanner.vue";
-import InfoCards from "../components/InfoCards.vue";
-import RetirementChart from "../components/RetirementChart.vue";
-import WithdrawChart from "../components/WithdrawChart.vue";
-import WithdrawTable from "../components/WithdrawTable.vue";
-import PmtCalculator from "../components/PmtCalculator.vue";
-import SliderInput from "../components/SliderInput.vue";
-import SliderGroup from "../components/SliderGroup.vue";
+import ResultBanner from "../components/calculator/ResultBanner.vue";
+import InfoCards from "../components/calculator/InfoCards.vue";
+import RetirementChart from "../components/calculator/RetirementChart.vue";
+import WithdrawChart from "../components/calculator/WithdrawChart.vue";
+import WithdrawTable from "../components/calculator/WithdrawTable.vue";
+import PmtCalculator from "../components/calculator/PmtCalculator.vue";
+import SliderInput from "../components/common/SliderInput.vue";
+import SliderGroup from "../components/common/SliderGroup.vue";
 import { useRecordSlots } from "../composables/useRecordSlots";
 
 const inputs = defaultInputs();

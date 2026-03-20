@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import type { WithdrawRow } from "../composables/useWithdrawSchedule";
+import type { WithdrawRow } from "../../composables/useWithdrawSchedule";
 
 const props = defineProps<{
   rows: WithdrawRow[];

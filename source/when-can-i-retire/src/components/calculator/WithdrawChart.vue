@@ -9,7 +9,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import type { WithdrawRow } from "../composables/useWithdrawSchedule";
+import type { WithdrawRow } from "../../composables/useWithdrawSchedule";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
