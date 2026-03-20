@@ -43,7 +43,9 @@ export interface Investment {
   rate: number
   rateBasis: ValueBasis
   initialValue: number
+  initialValueBasis: ValueBasis
   monthlyContribution: number
+  monthlyContributionBasis: ValueBasis
   fromAge: number
   toAge: number
 }

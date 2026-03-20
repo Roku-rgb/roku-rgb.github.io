@@ -50,14 +50,24 @@ function calcGroupRequired(
 function calcInvestEnd(
   inv: Investment,
   inflation: number,
+  currentAge: number,
 ): number {
   const realRate = toReal(inv.rate, inv.rateBasis, inflation)
+  const inf = inflation / 100
   const n = inv.toAge - inv.fromAge
-  if (n <= 0) return inv.initialValue
 
-  const annual = inv.monthlyContribution * 12
-  let bal = inv.initialValue
+  const deflatorInit = Math.pow(1 + inf, inv.fromAge - currentAge)
+  const realInitial = (inv.initialValueBasis ?? 'real') === 'nominal'
+    ? inv.initialValue / deflatorInit : inv.initialValue
+
+  if (n <= 0) return realInitial
+
+  let bal = realInitial
   for (let i = 0; i < n; i++) {
+    const yearAge = inv.fromAge + i
+    const annual = (inv.monthlyContributionBasis ?? 'real') === 'nominal'
+      ? (inv.monthlyContribution * 12) / Math.pow(1 + inf, yearAge - currentAge)
+      : inv.monthlyContribution * 12
     bal = bal * (1 + realRate) + annual
   }
   return bal
@@ -109,8 +119,11 @@ function simulate(
     // Investment start: fund initial value from idle assets
     for (const inv of investments) {
       if (age === inv.fromAge) {
-        idleAssets -= inv.initialValue
-        invBal.set(inv.id, inv.initialValue)
+        const deflator = Math.pow(1 + inf, inv.fromAge - currentAge)
+        const realInitial = (inv.initialValueBasis ?? 'real') === 'nominal'
+          ? inv.initialValue / deflator : inv.initialValue
+        idleAssets -= realInitial
+        invBal.set(inv.id, realInitial)
       }
     }
 
@@ -226,7 +239,9 @@ function simulate(
     const investDetails = investments.map(inv => {
       let bal = invBal.get(inv.id) ?? 0
       if (age >= inv.fromAge && age < inv.toAge) {
-        const annual = inv.monthlyContribution * 12
+        const annual = (inv.monthlyContributionBasis ?? 'real') === 'nominal'
+          ? (inv.monthlyContribution * 12) / Math.pow(1 + inf, age - currentAge)
+          : inv.monthlyContribution * 12
         idleAssets -= annual
         const rr = toReal(inv.rate, inv.rateBasis, inflation)
         bal = bal * (1 + rr) + annual
@@ -309,7 +324,7 @@ export function usePortfolioCalc(
     const investRes: InvestmentResult[] = investments.value.map(inv => ({
       id: inv.id,
       label: inv.label,
-      endValue: calcInvestEnd(inv, inf),
+      endValue: calcInvestEnd(inv, inf, curAge),
     }))
 
     const totalLmpReq = lmpReq.reduce((s, g) => s + g.requiredValue, 0)

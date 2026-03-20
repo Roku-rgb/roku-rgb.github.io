@@ -165,7 +165,9 @@ function addInvestment(group: GroupTab) {
   if (countByType(group, 'invest') >= MAX_ITEMS_PER_TYPE) return
   group.items.push({ type: 'invest', data: {
     id: uid(), label: '新投資', rate: 6, rateBasis: 'real',
-    initialValue: 0, monthlyContribution: 0, fromAge: currentAge.value, toAge: 65,
+    initialValue: 0, initialValueBasis: 'real',
+    monthlyContribution: 0, monthlyContributionBasis: 'real',
+    fromAge: currentAge.value, toAge: 65,
   } })
 }
 function addLmp(group: GroupTab) {
@@ -365,6 +367,7 @@ const TYPE_META: Record<string, { label: string; color: string }> = {
               v-if="item.type === 'invest'"
               v-model="(item as { type: 'invest'; data: Investment }).data"
               :end-value="getInvestEnd(item.data.id)"
+              :inflation="inflation" :current-age="currentAge"
               :tag="TYPE_META[item.type].label" :tag-color="TYPE_META[item.type].color"
               @delete="removeItem(activeGroup, idx)">
               <div class="reorder-row reorder-mobile">
@@ -376,6 +379,7 @@ const TYPE_META: Record<string, { label: string; color: string }> = {
               v-if="item.type === 'lmp'"
               v-model="(item as { type: 'lmp'; data: LmpGroup }).data"
               :required-value="getLmpReq(item.data.id)"
+              :inflation="inflation" :current-age="currentAge"
               :tag="TYPE_META[item.type].label" :tag-color="TYPE_META[item.type].color"
               @delete="removeItem(activeGroup, idx)">
               <div class="reorder-row reorder-mobile">
@@ -387,6 +391,7 @@ const TYPE_META: Record<string, { label: string; color: string }> = {
               v-if="item.type === 'rp'"
               v-model="(item as { type: 'rp'; data: RpGroup }).data"
               :required-value="getRpReq(item.data.id)"
+              :inflation="inflation" :current-age="currentAge"
               :tag="TYPE_META[item.type].label" :tag-color="TYPE_META[item.type].color"
               @delete="removeItem(activeGroup, idx)">
               <div class="reorder-row reorder-mobile">

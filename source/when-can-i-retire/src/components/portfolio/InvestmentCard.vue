@@ -4,7 +4,7 @@ import type { Investment, ValueBasis } from '../../types/portfolio'
 import SliderInput from '../common/SliderInput.vue'
 
 const model = defineModel<Investment>({ required: true })
-const props = withDefaults(defineProps<{ endValue: number; tag?: string; tagColor?: string }>(), { tag: '', tagColor: '' })
+const props = withDefaults(defineProps<{ endValue: number; inflation: number; currentAge: number; tag?: string; tagColor?: string }>(), { tag: '', tagColor: '' })
 defineEmits<{ delete: [] }>()
 
 function set<K extends keyof Investment>(key: K, value: Investment[K]) {
@@ -16,6 +16,11 @@ const initialValue = computed({ get: () => model.value.initialValue, set: v => s
 const monthlyContribution = computed({ get: () => model.value.monthlyContribution, set: v => set('monthlyContribution', v) })
 const fromAge = computed({ get: () => model.value.fromAge, set: v => set('fromAge', v) })
 const toAge = computed({ get: () => model.value.toAge, set: v => set('toAge', v) })
+
+const nominalEndValue = computed(() => {
+  const inf = props.inflation / 100
+  return props.endValue * Math.pow(1 + inf, model.value.toAge - props.currentAge)
+})
 </script>
 
 <template>
@@ -36,8 +41,18 @@ const toAge = computed({ get: () => model.value.toAge, set: v => set('toAge', v)
         </div>
       </SliderInput>
       <div class="field-row">
-        <SliderInput v-model="initialValue" label="初始金額" :min="0" :max="3000" :step="1" unit=" 萬" />
-        <SliderInput v-model="monthlyContribution" label="每月投資" :min="0" :max="15" :step="0.05" unit=" 萬" />
+        <SliderInput v-model="initialValue" label="初始金額" :min="0" :max="2000" :step="1" unit=" 萬">
+          <div class="basis-toggle">
+            <button :class="{ active: (model.initialValueBasis ?? 'real') === 'nominal' }" @click="set('initialValueBasis', 'nominal' as ValueBasis)">名目</button>
+            <button :class="{ active: (model.initialValueBasis ?? 'real') === 'real' }" @click="set('initialValueBasis', 'real' as ValueBasis)">實質</button>
+          </div>
+        </SliderInput>
+        <SliderInput v-model="monthlyContribution" label="每月投資" :min="0" :max="15" :step="0.05" unit=" 萬">
+          <div class="basis-toggle">
+            <button :class="{ active: (model.monthlyContributionBasis ?? 'real') === 'nominal' }" @click="set('monthlyContributionBasis', 'nominal' as ValueBasis)">名目</button>
+            <button :class="{ active: (model.monthlyContributionBasis ?? 'real') === 'real' }" @click="set('monthlyContributionBasis', 'real' as ValueBasis)">實質</button>
+          </div>
+        </SliderInput>
       </div>
       <div class="age-sliders">
         <SliderInput v-model="fromAge" label="起始年齡" :min="20" :max="100" :step="1" unit=" 歲" />
@@ -45,7 +60,9 @@ const toAge = computed({ get: () => model.value.toAge, set: v => set('toAge', v)
       </div>
     </div>
     <div class="card-footer">
-      到期金額：<span class="computed-value">{{ Math.round(props.endValue).toLocaleString() }} 萬</span>
+      到期金額：<span class="computed-value">{{ Math.round(nominalEndValue).toLocaleString() }} 萬<span class="basis-label">(名目)</span></span>
+      <span class="separator">/</span>
+      <span class="computed-value">{{ Math.round(props.endValue).toLocaleString() }} 萬<span class="basis-label">(實質)</span></span>
     </div>
     <slot />
   </div>
@@ -158,5 +175,16 @@ const toAge = computed({ get: () => model.value.toAge, set: v => set('toAge', v)
   font-family: 'Space Mono', monospace;
   font-weight: 600;
   color: #60a5fa;
+}
+.basis-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  color: #6b7280;
+  margin-left: 2px;
+}
+.separator {
+  color: #4b5563;
+  margin: 0 4px;
 }
 </style>
