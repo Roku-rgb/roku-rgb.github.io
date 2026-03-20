@@ -171,7 +171,20 @@ export function usePortfolioRecordSlots(inputs: PortfolioInputs) {
     }
   }
 
+  function copyToSlot(target: number) {
+    if (target === activeSlot.value) return
+
+    const snap = snapshot(inputs)
+
+    if (target === 0) {
+      liveBackup = JSON.parse(JSON.stringify(snap))
+    } else {
+      writeStorage(storageKey(target), JSON.stringify(snap))
+      slotFilled.value[target] = true
+    }
+  }
+
   onUnmounted(() => stopAutoSave())
 
-  return { activeSlot, slotFilled, slotDirty, switchSlot, resetSlot }
+  return { activeSlot, slotFilled, slotDirty, switchSlot, resetSlot, copyToSlot }
 }

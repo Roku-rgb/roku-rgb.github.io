@@ -120,9 +120,19 @@ const inflation = ref(2)
 const isNominal = ref(false)
 
 /* ── Record Slots ── */
-const { activeSlot, slotFilled, slotDirty, switchSlot, resetSlot } = usePortfolioRecordSlots({
+const SLOT_LABELS = ['即時試算', '紀錄 1', '紀錄 2', '紀錄 3']
+const { activeSlot, slotFilled, slotDirty, switchSlot, resetSlot, copyToSlot } = usePortfolioRecordSlots({
   currentAge, totalAssets, inflation, groupTabs, activeGroupIdx, syncNextId,
 })
+
+const copiedSlot = ref<number | null>(null)
+let copiedTimer: ReturnType<typeof setTimeout> | null = null
+function doCopy(target: number) {
+  copyToSlot(target)
+  copiedSlot.value = target
+  if (copiedTimer) clearTimeout(copiedTimer)
+  copiedTimer = setTimeout(() => { copiedSlot.value = null }, 1200)
+}
 
 /* ── Flatten all groups for calculation ── */
 function pickItems<T>(type: PortfolioItem['type']): T[] {
@@ -229,7 +239,7 @@ const TYPE_META: Record<string, { label: string; color: string }> = {
     <!-- Record Slot Bar -->
     <div class="record-bar">
       <button
-        v-for="(label, idx) in ['即時試算', '紀錄 1', '紀錄 2', '紀錄 3']"
+        v-for="(label, idx) in SLOT_LABELS"
         :key="idx"
         class="record-btn"
         :class="{
@@ -267,6 +277,28 @@ const TYPE_META: Record<string, { label: string; color: string }> = {
           <polyline points="3 7 3 13 9 13" />
         </svg>
         <span class="reset-tip">重設</span>
+      </button>
+    </div>
+
+    <!-- Copy Slot Row -->
+    <div class="copy-bar">
+      <span class="copy-label">複製到</span>
+      <button
+        v-for="(label, idx) in SLOT_LABELS"
+        :key="idx"
+        class="copy-target-btn"
+        :class="{ disabled: idx === activeSlot, copied: copiedSlot === idx }"
+        :disabled="idx === activeSlot"
+        @click="doCopy(idx)">
+        <template v-if="copiedSlot === idx">
+          <svg width="12" height="12" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="3"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12l5 5L20 7" />
+          </svg>
+          已複製
+        </template>
+        <template v-else>{{ label }}</template>
       </button>
     </div>
 
@@ -823,6 +855,54 @@ const TYPE_META: Record<string, { label: string; color: string }> = {
 @keyframes pulse-dirty {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
+}
+
+/* ── Copy Bar ── */
+.copy-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: -10px;
+  margin-bottom: 16px;
+  padding: 4px 6px;
+}
+.copy-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  white-space: nowrap;
+}
+.copy-target-btn {
+  flex: 1;
+  padding: 4px 0;
+  border: 1px solid rgba(96, 165, 250, 0.25);
+  border-radius: 6px;
+  background: transparent;
+  color: #60a5fa;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.copy-target-btn:hover:not(:disabled) {
+  background: rgba(96, 165, 250, 0.12);
+  border-color: rgba(96, 165, 250, 0.5);
+}
+.copy-target-btn:disabled {
+  color: #374151;
+  border-color: rgba(55, 65, 81, 0.3);
+  cursor: default;
+}
+.copy-target-btn.copied {
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.5);
+  background: rgba(52, 211, 153, 0.12);
+  animation: copy-flash 0.3s ease-out;
+}
+@keyframes copy-flash {
+  0% { transform: scale(1.08); }
+  100% { transform: scale(1); }
 }
 
 .footer {
