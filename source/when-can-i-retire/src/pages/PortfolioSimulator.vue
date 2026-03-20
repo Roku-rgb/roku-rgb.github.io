@@ -43,11 +43,14 @@ const _urlHashData = getPortfolioHashData()
 const _urlState = _urlHashData ? decodePortfolioState(_urlHashData, uid) : null
 
 /* ── Group Tabs ── */
-const groupTabs = ref<GroupTab[]>(_urlState?.groupTabs ?? [
+const groupTabs = ref<GroupTab[]>([
   {
-    id: uid(), label: '薪水',
+    id: uid(), label: '計畫A',
     items: [
-      { type: 'income', data: { id: uid(), label: '薪資收入', annualAmount: 0, amountBasis: 'nominal', growthRate: 0, growthBasis: 'nominal', fromAge: 31, toAge: 49, isOneTime: false, occurAge: 30 } },
+      { type: 'income', data: { id: uid(), label: '薪資收入', annualAmount: 60, amountBasis: 'nominal', growthRate: 0, growthBasis: 'nominal', fromAge: 30, toAge: 64, isOneTime: false, occurAge: 30 } },
+      { type: 'expense', data: { id: uid(), label: '基本生活費', annualAmount: 24, amountBasis: 'real', growthRate: 0, growthBasis: 'real', fromAge: 30, toAge: 80, isOneTime: false, occurAge: 30 } },
+      { type: 'lmp', data: { id: uid(), label: '退休 LMP', rate: 1.5, rateBasis: 'real', annualWithdraw: 24, withdrawBasis: 'real', fromAge: 65, toAge: 80 } },
+      { type: 'rp', data: { id: uid(), label: '退休 RP', rate: 6, rateBasis: 'real', annualWithdraw: 12, withdrawBasis: 'real', fromAge: 65, toAge: 80 } },
     ],
   }
 ])
@@ -119,16 +122,24 @@ function onTabDragEnd() {
 }
 
 /* ── Global Parameters ── */
-const currentAge = ref(_urlState?.currentAge ?? 30)
-const totalAssets = ref(_urlState?.totalAssets ?? 100)
-const inflation = ref(_urlState?.inflation ?? 2)
+const currentAge = ref(30)
+const totalAssets = ref(100)
+const inflation = ref(2)
 const isNominal = ref(false)
 
-/* ── Record Slots ── */
+/* ── Record Slots (captures defaultSnap from current refs before URL state is applied) ── */
 const SLOT_LABELS = ['即時試算', '紀錄 1', '紀錄 2', '紀錄 3']
 const { activeSlot, slotFilled, slotDirty, switchSlot, resetSlot, copyToSlot } = usePortfolioRecordSlots({
   currentAge, totalAssets, inflation, groupTabs, activeGroupIdx, syncNextId,
 })
+
+/* ── Apply URL state after defaultSnap is captured ── */
+if (_urlState) {
+  currentAge.value = _urlState.currentAge
+  totalAssets.value = _urlState.totalAssets
+  inflation.value = _urlState.inflation
+  groupTabs.value = _urlState.groupTabs
+}
 
 const copiedSlot = ref<number | null>(null)
 let copiedTimer: ReturnType<typeof setTimeout> | null = null
