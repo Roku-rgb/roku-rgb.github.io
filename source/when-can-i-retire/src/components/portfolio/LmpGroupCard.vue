@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { withDefaults } from 'vue'
 import type { LmpGroup } from '../../types/portfolio'
 import WithdrawGroupCard from './WithdrawGroupCard.vue'
 

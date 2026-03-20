@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, withDefaults } from 'vue'
+import { computed } from 'vue'
 import type { Investment, ValueBasis } from '../../types/portfolio'
 import SliderInput from '../common/SliderInput.vue'
 

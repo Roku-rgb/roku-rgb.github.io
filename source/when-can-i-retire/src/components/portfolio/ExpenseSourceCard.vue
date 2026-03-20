@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { withDefaults } from 'vue'
 import type { ExpenseSource } from '../../types/portfolio'
 import IncomeSourceCard from './IncomeSourceCard.vue'
 

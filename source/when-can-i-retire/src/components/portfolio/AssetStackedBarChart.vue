@@ -165,10 +165,10 @@ const chartOptions = computed(() => ({
           if (idx === undefined) return ''
           return `${props.rows[idx].age} 歲(年末)`
         },
-        label: (ctx: { dataset: { label?: string }; parsed: { y: number } }) => {
+        label: (ctx: { dataset: { label?: string }; parsed: { y: number | null } }) => {
           const label = ctx.dataset.label ?? ''
           if (label === '_base') return ''
-          const val = ctx.parsed.y
+          const val = ctx.parsed.y ?? 0
           if (val === 0) return ''
           return ` ${label}：${val.toLocaleString()} 萬`
         },
