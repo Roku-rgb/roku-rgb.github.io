@@ -33,7 +33,8 @@ function inf(v: number, age: number): number {
 
 type ViewMode = 'net' | 'diverging' | 'grouped'
 const viewMode = ref<ViewMode>('grouped')
-const includeOneTimeExpense = ref(true)
+/** 圖表與淨額是否納入一次性收入／支出；關閉時兩者皆排除 */
+const includeOneTimeFlow = ref(true)
 
 const INCOME_COLORS = ['#34d399', '#10b981', '#059669', '#047857', '#065f46']
 const LMP_COLORS = ['#f59e0b', '#d97706', '#b45309', '#92400e', '#78350f']
@@ -106,8 +107,18 @@ function labelFor(type: 'income' | 'expense' | 'investContrib' | 'lmp' | 'rp', i
 }
 
 const filteredExpenseIds = computed(() => {
-  if (includeOneTimeExpense.value) return allExpenseIds.value
+  if (includeOneTimeFlow.value) return allExpenseIds.value
   return allExpenseIds.value.filter(id => !isOneTimeItem('expense', id))
+})
+
+const filteredPosIncomeIds = computed(() => {
+  if (includeOneTimeFlow.value) return posIncomeIds.value
+  return posIncomeIds.value.filter(id => !isOneTimeItem('income', id))
+})
+
+const filteredNegIncomeIds = computed(() => {
+  if (includeOneTimeFlow.value) return negIncomeIds.value
+  return negIncomeIds.value.filter(id => !isOneTimeItem('income', id))
 })
 
 function oneTimeExpenseSum(r: PortfolioYearRow): number {
@@ -116,8 +127,14 @@ function oneTimeExpenseSum(r: PortfolioYearRow): number {
     .reduce((s, e) => s + e.amount, 0)
 }
 
+function oneTimeIncomeSum(r: PortfolioYearRow): number {
+  return r.incomes
+    .filter(i => i.isOneTime)
+    .reduce((s, i) => s + i.amount, 0)
+}
+
 const chartDataDiverging = computed(() => {
-  const incomeDatasets = posIncomeIds.value.map((id, i) => ({
+  const incomeDatasets = filteredPosIncomeIds.value.map((id, i) => ({
     label: labelFor('income', id),
     data: props.rows.map(r => inf(r.incomes.find(x => x.id === id)?.amount ?? 0, r.age)),
     backgroundColor: INCOME_COLORS[i % INCOME_COLORS.length],
@@ -141,7 +158,7 @@ const chartDataDiverging = computed(() => {
     stack: 'income',
   }))
 
-  const negIncomeDatasets = negIncomeIds.value.map((id, i) => ({
+  const negIncomeDatasets = filteredNegIncomeIds.value.map((id, i) => ({
     label: labelFor('income', id),
     data: props.rows.map(r => inf(r.incomes.find(x => x.id === id)?.amount ?? 0, r.age)),
     backgroundColor: EXPENSE_COLORS[i % EXPENSE_COLORS.length],
@@ -152,7 +169,7 @@ const chartDataDiverging = computed(() => {
   const expenseDatasets = filteredExpenseIds.value.map((id, i) => ({
     label: labelFor('expense', id),
     data: props.rows.map(r => -inf(r.expenses.find(x => x.id === id)?.amount ?? 0, r.age)),
-    backgroundColor: EXPENSE_COLORS[(negIncomeIds.value.length + i) % EXPENSE_COLORS.length],
+    backgroundColor: EXPENSE_COLORS[(filteredNegIncomeIds.value.length + i) % EXPENSE_COLORS.length],
     borderRadius: 2,
     stack: 'expense',
   }))
@@ -170,9 +187,9 @@ const chartDataDiverging = computed(() => {
 
 const chartDataNet = computed(() => {
   const data = props.rows.map(r => {
-    const adjusted = includeOneTimeExpense.value
+    const adjusted = includeOneTimeFlow.value
       ? r.netFlow
-      : r.netFlow + oneTimeExpenseSum(r)
+      : r.netFlow + oneTimeExpenseSum(r) - oneTimeIncomeSum(r)
     return inf(adjusted, r.age)
   })
   const colors = props.rows.map((_, i) => data[i] >= 0 ? '#34d399' : '#f87171')
@@ -183,7 +200,7 @@ const chartDataNet = computed(() => {
 })
 
 const chartDataGrouped = computed(() => {
-  const incomeDatasets = posIncomeIds.value.map((id, i) => ({
+  const incomeDatasets = filteredPosIncomeIds.value.map((id, i) => ({
     label: labelFor('income', id),
     data: props.rows.map(r => inf(r.incomes.find(x => x.id === id)?.amount ?? 0, r.age)),
     backgroundColor: INCOME_COLORS[i % INCOME_COLORS.length],
@@ -207,7 +224,7 @@ const chartDataGrouped = computed(() => {
     stack: 'income',
   }))
 
-  const negIncomeDatasets = negIncomeIds.value.map((id, i) => ({
+  const negIncomeDatasets = filteredNegIncomeIds.value.map((id, i) => ({
     label: labelFor('income', id),
     data: props.rows.map(r => -inf(r.incomes.find(x => x.id === id)?.amount ?? 0, r.age)),
     backgroundColor: EXPENSE_COLORS[i % EXPENSE_COLORS.length],
@@ -218,7 +235,7 @@ const chartDataGrouped = computed(() => {
   const expenseDatasets = filteredExpenseIds.value.map((id, i) => ({
     label: labelFor('expense', id),
     data: props.rows.map(r => inf(r.expenses.find(x => x.id === id)?.amount ?? 0, r.age)),
-    backgroundColor: EXPENSE_COLORS[(negIncomeIds.value.length + i) % EXPENSE_COLORS.length],
+    backgroundColor: EXPENSE_COLORS[(filteredNegIncomeIds.value.length + i) % EXPENSE_COLORS.length],
     borderRadius: 2,
     stack: 'expense',
   }))
@@ -283,9 +300,12 @@ const chartOptions = computed(() => ({
           if (idx === undefined) return []
           const r = props.rows[idx]
           const f = inflationFactor(r.age)
-          const posIncome = r.incomes.reduce((s, i) => s + Math.max(0, i.amount), 0)
-          const negIncome = -r.incomes.reduce((s, i) => s + Math.min(0, i.amount), 0)
-          const totalExp = includeOneTimeExpense.value
+          const incRows = includeOneTimeFlow.value
+            ? r.incomes
+            : r.incomes.filter(i => !i.isOneTime)
+          const posIncome = incRows.reduce((s, i) => s + Math.max(0, i.amount), 0)
+          const negIncome = -incRows.reduce((s, i) => s + Math.min(0, i.amount), 0)
+          const totalExp = includeOneTimeFlow.value
             ? r.expenses.reduce((s, e) => s + e.amount, 0)
             : r.expenses.filter(e => !e.isOneTime).reduce((s, e) => s + e.amount, 0)
           const chartIncome = (posIncome + r.totalLmpWithdraw + r.totalRpWithdraw) * f
@@ -303,7 +323,7 @@ const chartOptions = computed(() => ({
 
 const legendItems = computed(() => {
   const items: { color: string; label: string }[] = []
-  posIncomeIds.value.forEach((id, i) => {
+  filteredPosIncomeIds.value.forEach((id, i) => {
     items.push({ color: INCOME_COLORS[i % INCOME_COLORS.length], label: labelFor('income', id) })
   })
   allLmpIds.value.forEach((id, i) => {
@@ -312,11 +332,11 @@ const legendItems = computed(() => {
   allRpIds.value.forEach((id, i) => {
     items.push({ color: RP_COLORS[i % RP_COLORS.length], label: labelFor('rp', id) })
   })
-  negIncomeIds.value.forEach((id, i) => {
+  filteredNegIncomeIds.value.forEach((id, i) => {
     items.push({ color: EXPENSE_COLORS[i % EXPENSE_COLORS.length], label: labelFor('income', id) })
   })
   filteredExpenseIds.value.forEach((id, i) => {
-    items.push({ color: EXPENSE_COLORS[(negIncomeIds.value.length + i) % EXPENSE_COLORS.length], label: labelFor('expense', id) })
+    items.push({ color: EXPENSE_COLORS[(filteredNegIncomeIds.value.length + i) % EXPENSE_COLORS.length], label: labelFor('expense', id) })
   })
   allInvestContribIds.value.forEach((id, i) => {
     items.push({ color: INVEST_CONTRIB_COLORS[i % INVEST_CONTRIB_COLORS.length], label: labelFor('investContrib', id) })
@@ -334,7 +354,7 @@ const legendItems = computed(() => {
       </div>
       <div class="toggle-row">
         <div class="toggle-group">
-          <button class="toggle-btn" :class="{ active: includeOneTimeExpense }" @click="includeOneTimeExpense = !includeOneTimeExpense">一次性支出</button>
+          <button class="toggle-btn" :class="{ active: includeOneTimeFlow }" @click="includeOneTimeFlow = !includeOneTimeFlow">一次性收支</button>
         </div>
         <div class="toggle-group">
           <button class="toggle-btn" :class="{ active: viewMode === 'diverging' }" @click="viewMode = 'diverging'">收支分離</button>

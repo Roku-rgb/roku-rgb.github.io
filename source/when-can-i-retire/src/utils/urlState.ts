@@ -9,6 +9,7 @@ interface CompactState {
     items: Array<{
       type: PortfolioItem['type']
       data: Record<string, unknown>
+      enabled?: boolean
     }>
   }>
 }
@@ -42,7 +43,9 @@ export function encodePortfolioState(
       label: g.label,
       items: g.items.map(item => {
         const { id: _, ...rest } = item.data as unknown as Record<string, unknown> & { id: string }
-        return { type: item.type, data: rest }
+        const entry: CompactState['groupTabs'][number]['items'][number] = { type: item.type, data: rest }
+        if (item.enabled === false) entry.enabled = false
+        return entry
       }),
     })),
   }
@@ -71,10 +74,11 @@ export function decodePortfolioState(
       groupTabs: state.groupTabs.map(g => ({
         id: uid(),
         label: g.label,
-        items: g.items.map(item => ({
-          type: item.type,
-          data: { ...item.data, id: uid() },
-        })) as PortfolioItem[],
+        items: g.items.map(item => {
+          const pi: Record<string, unknown> = { type: item.type, data: { ...item.data, id: uid() } }
+          if (item.enabled === false) pi.enabled = false
+          return pi
+        }) as PortfolioItem[],
       })),
     }
   } catch {

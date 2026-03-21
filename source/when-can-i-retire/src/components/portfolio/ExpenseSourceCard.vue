@@ -3,12 +3,12 @@ import type { ExpenseSource } from '../../types/portfolio'
 import IncomeSourceCard from './IncomeSourceCard.vue'
 
 const model = defineModel<ExpenseSource>({ required: true })
-const props = withDefaults(defineProps<{ tag?: string; tagColor?: string }>(), { tag: '', tagColor: '' })
-defineEmits<{ delete: [] }>()
+const props = withDefaults(defineProps<{ tag?: string; tagColor?: string; enabled?: boolean }>(), { tag: '', tagColor: '', enabled: true })
+defineEmits<{ delete: []; 'toggle-enabled': [] }>()
 </script>
 
 <template>
-  <IncomeSourceCard v-model="model" color="#fb923c" :tag="props.tag" :tag-color="props.tagColor" @delete="$emit('delete')">
+  <IncomeSourceCard v-model="model" color="#fb923c" :tag="props.tag" :tag-color="props.tagColor" :enabled="props.enabled" @delete="$emit('delete')" @toggle-enabled="$emit('toggle-enabled')">
     <slot />
   </IncomeSourceCard>
 </template>

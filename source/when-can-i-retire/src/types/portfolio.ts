@@ -51,11 +51,11 @@ export interface Investment {
 }
 
 export type PortfolioItem =
-  | { type: 'income'; data: IncomeSource }
-  | { type: 'expense'; data: ExpenseSource }
-  | { type: 'invest'; data: Investment }
-  | { type: 'lmp'; data: LmpGroup }
-  | { type: 'rp'; data: RpGroup }
+  | { type: 'income'; data: IncomeSource; enabled?: boolean }
+  | { type: 'expense'; data: ExpenseSource; enabled?: boolean }
+  | { type: 'invest'; data: Investment; enabled?: boolean }
+  | { type: 'lmp'; data: LmpGroup; enabled?: boolean }
+  | { type: 'rp'; data: RpGroup; enabled?: boolean }
 
 export interface GroupTab {
   id: string

@@ -13,8 +13,9 @@ const props = withDefaults(defineProps<{
   currentAge: number
   tag?: string
   tagColor?: string
-}>(), { tag: '', tagColor: '' })
-defineEmits<{ delete: [] }>()
+  enabled?: boolean
+}>(), { tag: '', tagColor: '', enabled: true })
+defineEmits<{ delete: []; 'toggle-enabled': [] }>()
 
 const nominalRequiredValue = computed(() => {
   const inf = props.inflation / 100
@@ -35,8 +36,16 @@ const toAge = computed({ get: () => model.value.toAge, set: v => set('toAge', v)
 </script>
 
 <template>
-  <div class="card" :style="{ borderLeftColor: borderColor }">
+  <div class="card" :class="{ 'card-disabled': !props.enabled }" :style="{ borderLeftColor: borderColor }">
     <div class="card-header">
+      <button class="eye-btn" :class="{ off: !props.enabled }" @click="$emit('toggle-enabled')" :title="props.enabled ? '點擊停用' : '點擊啟用'">
+        <svg v-if="props.enabled" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+        </svg>
+        <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" />
+        </svg>
+      </button>
       <span v-if="props.tag" class="type-tag" :style="{ color: props.tagColor, borderColor: props.tagColor }">{{ props.tag }}</span>
       <input
         class="card-label"
@@ -113,6 +122,41 @@ const toAge = computed({ get: () => model.value.toAge, set: v => set('toAge', v)
 }
 .card-delete:hover {
   color: #f87171;
+}
+.eye-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 4px;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.eye-btn:hover {
+  background: rgba(148, 163, 184, 0.1);
+  border-color: rgba(148, 163, 184, 0.4);
+  color: #e2e8f0;
+}
+.eye-btn.off {
+  color: #4b5563;
+  border-color: rgba(75, 85, 99, 0.3);
+}
+.eye-btn.off:hover {
+  color: #6b7280;
+  background: rgba(75, 85, 99, 0.15);
+}
+.card-disabled {
+  opacity: 0.45;
+}
+.card-disabled .card-body,
+.card-disabled .card-footer {
+  pointer-events: none;
 }
 .type-tag {
   font-size: 9px;
