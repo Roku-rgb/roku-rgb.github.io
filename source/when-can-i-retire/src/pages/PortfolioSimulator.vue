@@ -151,9 +151,14 @@ function doCopy(target: number) {
   copiedTimer = setTimeout(() => { copiedSlot.value = null }, 1200)
 }
 
+/* ── Toggle item enabled state ── */
+function toggleEnabled(item: PortfolioItem) {
+  item.enabled = item.enabled !== false ? false : true
+}
+
 /* ── Flatten all groups for calculation ── */
 function pickItems<T>(type: PortfolioItem['type']): T[] {
-  return groupTabs.value.flatMap(g => g.items.filter(i => i.type === type).map(i => i.data)) as T[]
+  return groupTabs.value.flatMap(g => g.items.filter(i => i.type === type && i.enabled !== false).map(i => i.data)) as T[]
 }
 const allIncomeSources = computed(() => pickItems<IncomeSource>('income'))
 const allExpenseSources = computed(() => pickItems<ExpenseSource>('expense'))
@@ -276,7 +281,9 @@ function exportPortfolio() {
       label: g.label,
       items: g.items.map(item => {
         const { id: _, ...rest } = item.data as unknown as Record<string, unknown> & { id: string }
-        return { type: item.type, data: rest }
+        const entry: Record<string, unknown> = { type: item.type, data: rest }
+        if (item.enabled === false) entry.enabled = false
+        return entry
       }),
     })),
   }
@@ -313,13 +320,14 @@ function onImportFile(e: Event) {
         showImportMsg('格式錯誤：缺少必要欄位', false)
         return
       }
-      const hydrated = raw.groupTabs.map((g: { label: string; items: Array<{ type: string; data: Record<string, unknown> }> }) => ({
+      const hydrated = raw.groupTabs.map((g: { label: string; items: Array<{ type: string; data: Record<string, unknown>; enabled?: boolean }> }) => ({
         id: uid(),
         label: g.label,
-        items: g.items.map((item: { type: string; data: Record<string, unknown> }) => ({
-          type: item.type,
-          data: { ...item.data, id: uid() },
-        })),
+        items: g.items.map((item: { type: string; data: Record<string, unknown>; enabled?: boolean }) => {
+          const pi: Record<string, unknown> = { type: item.type, data: { ...item.data, id: uid() } }
+          if (item.enabled === false) pi.enabled = false
+          return pi
+        }),
       })) as GroupTab[]
 
       currentAge.value = raw.currentAge
@@ -602,6 +610,8 @@ onUnmounted(() => { if (_urlTimer) clearTimeout(_urlTimer) })
               v-if="item.type === 'income'"
               v-model="(item as { type: 'income'; data: IncomeSource }).data"
               :tag="TYPE_META[item.type].label" :tag-color="TYPE_META[item.type].color"
+              :enabled="item.enabled !== false"
+              @toggle-enabled="toggleEnabled(item)"
               @delete="removeItem(activeGroup, idx)">
               <div class="reorder-row reorder-mobile">
                 <button class="reorder-btn" :disabled="idx === 0" @click="moveItem(activeGroup, idx, -1)" title="上移">&#9650; 上移</button>
@@ -612,6 +622,8 @@ onUnmounted(() => { if (_urlTimer) clearTimeout(_urlTimer) })
               v-if="item.type === 'expense'"
               v-model="(item as { type: 'expense'; data: ExpenseSource }).data"
               :tag="TYPE_META[item.type].label" :tag-color="TYPE_META[item.type].color"
+              :enabled="item.enabled !== false"
+              @toggle-enabled="toggleEnabled(item)"
               @delete="removeItem(activeGroup, idx)">
               <div class="reorder-row reorder-mobile">
                 <button class="reorder-btn" :disabled="idx === 0" @click="moveItem(activeGroup, idx, -1)" title="上移">&#9650; 上移</button>
@@ -624,6 +636,8 @@ onUnmounted(() => { if (_urlTimer) clearTimeout(_urlTimer) })
               :end-value="getInvestEnd(item.data.id)"
               :inflation="inflation" :current-age="currentAge"
               :tag="TYPE_META[item.type].label" :tag-color="TYPE_META[item.type].color"
+              :enabled="item.enabled !== false"
+              @toggle-enabled="toggleEnabled(item)"
               @delete="removeItem(activeGroup, idx)">
               <div class="reorder-row reorder-mobile">
                 <button class="reorder-btn" :disabled="idx === 0" @click="moveItem(activeGroup, idx, -1)" title="上移">&#9650; 上移</button>
@@ -636,6 +650,8 @@ onUnmounted(() => { if (_urlTimer) clearTimeout(_urlTimer) })
               :required-value="getLmpReq(item.data.id)"
               :inflation="inflation" :current-age="currentAge"
               :tag="TYPE_META[item.type].label" :tag-color="TYPE_META[item.type].color"
+              :enabled="item.enabled !== false"
+              @toggle-enabled="toggleEnabled(item)"
               @delete="removeItem(activeGroup, idx)">
               <div class="reorder-row reorder-mobile">
                 <button class="reorder-btn" :disabled="idx === 0" @click="moveItem(activeGroup, idx, -1)" title="上移">&#9650; 上移</button>
@@ -648,6 +664,8 @@ onUnmounted(() => { if (_urlTimer) clearTimeout(_urlTimer) })
               :required-value="getRpReq(item.data.id)"
               :inflation="inflation" :current-age="currentAge"
               :tag="TYPE_META[item.type].label" :tag-color="TYPE_META[item.type].color"
+              :enabled="item.enabled !== false"
+              @toggle-enabled="toggleEnabled(item)"
               @delete="removeItem(activeGroup, idx)">
               <div class="reorder-row reorder-mobile">
                 <button class="reorder-btn" :disabled="idx === 0" @click="moveItem(activeGroup, idx, -1)" title="上移">&#9650; 上移</button>
