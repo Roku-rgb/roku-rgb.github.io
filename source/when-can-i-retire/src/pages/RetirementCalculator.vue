@@ -12,6 +12,7 @@ import RetirementChart from "../components/calculator/RetirementChart.vue";
 import WithdrawChart from "../components/calculator/WithdrawChart.vue";
 import WithdrawTable from "../components/calculator/WithdrawTable.vue";
 import PmtCalculator from "../components/calculator/PmtCalculator.vue";
+import ShareButton from "../components/calculator/ShareButton.vue";
 import SliderInput from "../components/common/SliderInput.vue";
 import SliderGroup from "../components/common/SliderGroup.vue";
 import { useRecordSlots } from "../composables/useRecordSlots";
@@ -57,7 +58,14 @@ watch(
     <!-- Result Banner -->
     <ResultBanner
       :retire-age="result.retireAge"
-      :retire-details="result.retireDetails" />
+      :retire-details="result.retireDetails">
+      <template #subtitle-action>
+        <ShareButton
+          :current-age="inputs.currentAge.value"
+          :retire-age="result.retireAge"
+          :planned-end-age="inputs.endAge.value" />
+      </template>
+    </ResultBanner>
 
     <!-- Info Cards -->
     <InfoCards
@@ -129,7 +137,7 @@ watch(
         <SliderInput
           v-model="inputs.currentAge.value"
           label="目前年齡"
-          :min="20"
+          :min="0"
           :max="99"
           :step="1"
           unit=" 歲(年初)" />
@@ -245,6 +253,7 @@ watch(
 
     <!-- Footer -->
     <div class="footer">本工具僅供參考，不構成投資建議</div>
+
   </div>
 </template>
 
@@ -392,4 +401,5 @@ watch(
   font-size: 11px;
   color: #4b5563;
 }
+
 </style>

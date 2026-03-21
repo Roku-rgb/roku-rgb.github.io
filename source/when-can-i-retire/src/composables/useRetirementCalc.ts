@@ -53,11 +53,8 @@ export function useRetirementCalc(inputs: CalcInputs) {
     const data = [];
     let retireAge: number | null = null;
 
-    // 最大年齡限制 (動態調整計算範圍)
-    let maxAge = Math.min(inputs.endAge.value, 70);
-    if (inputs.currentAge.value > 65) {
-      maxAge = Math.min(inputs.endAge.value, 100);
-    }
+    // 圖表與試算範圍與「規劃活到」一致（endAge 已由介面限制在合理區間）
+    const maxAge = inputs.endAge.value;
 
     for (let age = inputs.currentAge.value; age <= maxAge; age++) {
       const k = age - inputs.currentAge.value + 1; // 年齡=年初，算到年末

@@ -10,6 +10,9 @@ defineProps<{
 <template>
   <div v-if="retireAge !== null && retireDetails" class="banner banner--ok">
     <div class="banner-subtitle">最早可退休年齡</div>
+    <div class="banner-action">
+      <slot name="subtitle-action" />
+    </div>
     <div class="banner-age">{{ retireAge }}<span class="banner-unit"> 歲</span></div>
     <div class="banner-info">
       還需 <span class="hl">{{ retireDetails.yearsToRetire }}</span> 年 ・
@@ -18,6 +21,9 @@ defineProps<{
   </div>
   <div v-else class="banner banner--fail">
     <div class="banner-subtitle">最早可退休年齡</div>
+    <div class="banner-action">
+      <slot name="subtitle-action" />
+    </div>
     <div class="banner-age">-<span class="banner-unit"> 歲</span></div>
     <div class="banner-info">
       還需 <span class="hl">-</span> 年 ・
@@ -28,6 +34,7 @@ defineProps<{
 
 <style scoped>
 .banner {
+  position: relative;
   border-radius: 16px;
   padding: 20px 24px;
   margin-bottom: 24px;
@@ -41,6 +48,13 @@ defineProps<{
 .banner--fail {
   background: linear-gradient(135deg, rgba(248, 113, 113, 0.1), rgba(251, 146, 60, 0.08));
   border: 1px solid rgba(248, 113, 113, 0.3);
+}
+.banner-action {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
 }
 .banner-subtitle {
   font-size: 12px;
