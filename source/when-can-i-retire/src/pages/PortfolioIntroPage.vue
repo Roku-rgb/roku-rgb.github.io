@@ -117,8 +117,28 @@
             <h3>🔗 URL 分享</h3>
             <p>
               即時試算的所有設定都編碼在網址中，複製網址即可分享完整規劃。<br />
-              對方打開連結就能看到一模一樣的模擬結果。
-              <br /><br />
+              對方打開連結就能看到一模一樣的模擬結果。<br />
+              可以透過短網址服務將連結縮短，例如：
+            </p>
+            <ul class="link-list">
+              <li>
+                <a
+                  href="https://reurl.cc/main/tw"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >縮短網址產生器 — reurl</a
+                >
+              </li>
+              <li>
+                <a
+                  href="https://ppt.cc"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >來個 PPT 短網址</a
+                >
+              </li>
+            </ul>
+            <p>
               僅「即時試算」會編碼在網址中；「紀錄1～3」存於本機，不會寫入連結。<br />
               可以透過「複製到」功能，將記錄放到即時試算中。
             </p>
@@ -262,6 +282,37 @@
   line-height: 1.7;
   color: #8a919e;
   margin: 0;
+}
+.card .link-list + p {
+  margin-top: 4px;
+}
+.card .link-list {
+  margin: 10px 0 12px;
+  padding: 10px 14px 10px 28px;
+  list-style: disc;
+  list-style-position: outside;
+  font-size: 18px;
+  line-height: 1.65;
+  color: #8a919e;
+  background: rgba(30, 41, 59, 0.45);
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+}
+.card .link-list li::marker {
+  color: #60a5fa;
+}
+.card .link-list li + li {
+  margin-top: 6px;
+}
+.card .link-list a {
+  color: #93c5fd;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(147, 197, 253, 0.35);
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.card .link-list a:hover {
+  color: #bfdbfe;
+  border-bottom-color: rgba(191, 219, 254, 0.55);
 }
 .steps {
   padding-left: 20px;

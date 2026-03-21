@@ -335,6 +335,33 @@ function onImportFile(e: Event) {
   reader.readAsText(file)
 }
 
+/* ── Share URL Modal ── */
+const shareModalOpen = ref(false)
+const shareUrl = ref('')
+const shareCopied = ref(false)
+let shareCopiedTimer: ReturnType<typeof setTimeout> | null = null
+
+function openShareModal() {
+  shareUrl.value = window.location.href
+  shareCopied.value = false
+  shareModalOpen.value = true
+}
+function closeShareModal() {
+  shareModalOpen.value = false
+}
+async function copyShareUrl() {
+  try {
+    await navigator.clipboard.writeText(shareUrl.value)
+    shareCopied.value = true
+    if (shareCopiedTimer) clearTimeout(shareCopiedTimer)
+    shareCopiedTimer = setTimeout(() => { shareCopied.value = false }, 2000)
+  } catch {
+    /* fallback for older browsers */
+    const input = document.querySelector('.share-url-input') as HTMLInputElement | null
+    if (input) { input.select(); document.execCommand('copy') }
+  }
+}
+
 /* ── Sync state → URL hash (debounced, replaceState to avoid history spam) ── */
 let _urlTimer: ReturnType<typeof setTimeout> | null = null
 watch(
@@ -399,6 +426,14 @@ onUnmounted(() => { if (_urlTimer) clearTimeout(_urlTimer) })
             <line x1="12" y1="3" x2="12" y2="15" />
           </svg>
           匯出
+        </button>
+
+        <button class="io-btn" @click="openShareModal" title="複製網址分享">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+          </svg>
+          複製網址
         </button>
       </div>
 
@@ -647,6 +682,39 @@ onUnmounted(() => { if (_urlTimer) clearTimeout(_urlTimer) })
 
     <!-- Footer -->
     <div class="footer">本工具僅供參考，不構成投資建議</div>
+
+    <!-- Share URL Modal -->
+    <Transition name="share-modal">
+      <div v-if="shareModalOpen" class="share-overlay" @click.self="closeShareModal">
+        <div class="share-dialog">
+            <div class="share-dialog-header">
+              <span class="share-dialog-title">分享網址 (即時試算資料)</span>
+              <button class="share-close-btn" @click="closeShareModal">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+            <div class="share-url-row">
+              <input class="share-url-input" :value="shareUrl" readonly @focus="($event.target as HTMLInputElement).select()" />
+              <button class="share-copy-btn" :class="{ copied: shareCopied }" @click="copyShareUrl">
+                <svg v-if="!shareCopied" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+                <svg v-else width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 12l5 5L20 7" />
+                </svg>
+                {{ shareCopied ? '已複製' : '複製' }}
+              </button>
+            </div>
+            <div class="share-hint">網址可能很長，建議使用短網址服務：</div>
+            <div class="share-shortener-links">
+              <a href="https://reurl.cc/" target="_blank" rel="noopener noreferrer">縮短網址產生器 — reurl</a>
+              <a href="https://ppt.cc/" target="_blank" rel="noopener noreferrer">來個 PPT 短網址</a>
+            </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -1266,6 +1334,149 @@ onUnmounted(() => { if (_urlTimer) clearTimeout(_urlTimer) })
   border-top: 1px solid #1e293b;
   font-size: 11px;
   color: #4b5563;
+}
+
+/* ── Share Modal ── */
+.share-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+}
+.share-dialog {
+  width: 90%;
+  max-width: 520px;
+  padding: 24px;
+  border-radius: 14px;
+  background: #1e293b;
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+.share-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.share-dialog-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #e2e8f0;
+  font-family: 'DM Sans', sans-serif;
+}
+.share-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.share-close-btn:hover {
+  background: rgba(148, 163, 184, 0.15);
+  color: #e2e8f0;
+}
+.share-url-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.share-url-input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  color: #cbd5e1;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.share-url-input:focus {
+  border-color: rgba(96, 165, 250, 0.5);
+}
+.share-copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 16px;
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  border-radius: 8px;
+  background: rgba(96, 165, 250, 0.1);
+  color: #60a5fa;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.share-copy-btn:hover {
+  background: rgba(96, 165, 250, 0.2);
+  border-color: rgba(96, 165, 250, 0.5);
+}
+.share-copy-btn.copied {
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.3);
+  background: rgba(52, 211, 153, 0.1);
+}
+.share-hint {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 8px;
+  font-family: 'DM Sans', sans-serif;
+}
+.share-shortener-links {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.share-shortener-links a {
+  font-size: 13px;
+  font-weight: 600;
+  color: #60a5fa;
+  text-decoration: none;
+  padding: 5px 12px;
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  border-radius: 6px;
+  background: rgba(96, 165, 250, 0.05);
+  transition: all 0.2s;
+  font-family: 'DM Sans', sans-serif;
+}
+.share-shortener-links a:hover {
+  background: rgba(96, 165, 250, 0.15);
+  border-color: rgba(96, 165, 250, 0.4);
+}
+.share-modal-enter-active,
+.share-modal-leave-active {
+  transition: opacity 0.2s ease;
+}
+.share-modal-enter-active .share-dialog,
+.share-modal-leave-active .share-dialog {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.share-modal-enter-from,
+.share-modal-leave-to {
+  opacity: 0;
+}
+.share-modal-enter-from .share-dialog {
+  transform: scale(0.95) translateY(8px);
+  opacity: 0;
+}
+.share-modal-leave-to .share-dialog {
+  transform: scale(0.95) translateY(8px);
+  opacity: 0;
 }
 
 @media (max-width: 640px) {
