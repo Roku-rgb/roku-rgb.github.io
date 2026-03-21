@@ -19,8 +19,8 @@ import TotalAssetChart from '../components/portfolio/TotalAssetChart.vue'
 import AssetStackedBarChart from '../components/portfolio/AssetStackedBarChart.vue'
 import PortfolioTable from '../components/portfolio/PortfolioTable.vue'
 
-const MAX_ITEMS_PER_TYPE = 5
-const MAX_GROUP_TABS = 10
+const MAX_ITEMS_PER_TYPE = 100
+const MAX_GROUP_TABS = 20
 
 let nextId = 1
 function uid() { return `g${nextId++}` }
@@ -493,7 +493,7 @@ onUnmounted(() => { if (_urlTimer) clearTimeout(_urlTimer) })
     <!-- Global Parameters -->
     <SliderGroup title="個人基本設定" color="#60a5fa">
       <div class="global-sliders">
-        <SliderInput v-model="currentAge" label="目前年齡" :min="20" :max="80" :step="1" unit=" 歲" />
+        <SliderInput v-model="currentAge" label="目前年齡" :min="20" :max="80" :step="1" unit=" 歲(年初)" />
         <SliderInput v-model="totalAssets" label="現有資產總額" :min="0" :max="2000" :step="1" unit=" 萬" :format="fmtMoney" />
         <SliderInput v-model="inflation" label="預估通膨率" :min="0" :max="6" :step="0.1" unit="%" />
       </div>

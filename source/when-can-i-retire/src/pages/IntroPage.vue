@@ -20,8 +20,6 @@
           2. 再用成長型資產追求生活品質<br />
           3. 最後透過攤還式提領讓資金花到最後一天
         </p>
-
-        <p style="margin-top: 20px">讓未來的自己，感謝今天開始規劃的你。</p>
       </section>
 
       <section class="section">

@@ -4,8 +4,9 @@ import NavBar from "./components/common/NavBar.vue";
 import RetirementCalculator from "./pages/RetirementCalculator.vue";
 import PortfolioSimulator from "./pages/PortfolioSimulator.vue";
 import IntroPage from "./pages/IntroPage.vue";
+import PortfolioIntroPage from "./pages/PortfolioIntroPage.vue";
 
-const validPages = ["calculator", "portfolio", "intro"];
+const validPages = ["calculator", "portfolio", "intro", "portfolio-intro"];
 
 function getPageFromHash(): string {
   const raw = window.location.hash.replace("#", "");
@@ -34,4 +35,5 @@ onUnmounted(() => window.removeEventListener("hashchange", onHashChange));
   <RetirementCalculator v-if="activePage === 'calculator'" />
   <PortfolioSimulator v-else-if="activePage === 'portfolio'" />
   <IntroPage v-else-if="activePage === 'intro'" />
+  <PortfolioIntroPage v-else-if="activePage === 'portfolio-intro'" />
 </template>

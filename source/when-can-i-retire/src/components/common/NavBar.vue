@@ -9,8 +9,9 @@ const emit = defineEmits<{
 
 const tabs = [
   { key: "calculator", label: "計算機" },
+  { key: "intro", label: "計算機介紹" },
   { key: "portfolio", label: "多資產組合" },
-  { key: "intro", label: "介紹" },
+  { key: "portfolio-intro", label: "多資產組合介紹" },
 ];
 </script>
 

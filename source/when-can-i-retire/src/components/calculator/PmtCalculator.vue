@@ -73,8 +73,8 @@ const pmt = computed(() => {
           v-model="pv"
           label="目前 RP 帳戶餘額（名目）"
           :min="0"
-          :max="3000"
-          :step="5"
+          :max="2000"
+          :step="1"
           unit=" 萬"
           :format="fmtMoney" />
         <SliderInput
