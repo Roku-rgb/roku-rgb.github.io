@@ -60,7 +60,7 @@ export function useRetirementCalc(inputs: CalcInputs) {
     }
 
     for (let age = inputs.currentAge.value; age <= maxAge; age++) {
-      const k = age - inputs.currentAge.value;
+      const k = age - inputs.currentAge.value + 1; // 年齡=年初，算到年末
       const assets = futureValue(
         inputs.currentCash.value,
         rSaveNominal,

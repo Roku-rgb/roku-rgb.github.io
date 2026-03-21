@@ -40,20 +40,18 @@ const nominalEndValue = computed(() => {
           <button :class="{ active: model.rateBasis === 'real' }" @click="set('rateBasis', 'real' as ValueBasis)">實質</button>
         </div>
       </SliderInput>
-      <div class="field-row">
-        <SliderInput v-model="initialValue" label="初始金額" :min="0" :max="2000" :step="1" unit=" 萬">
-          <div class="basis-toggle">
-            <button :class="{ active: (model.initialValueBasis ?? 'real') === 'nominal' }" @click="set('initialValueBasis', 'nominal' as ValueBasis)">名目</button>
-            <button :class="{ active: (model.initialValueBasis ?? 'real') === 'real' }" @click="set('initialValueBasis', 'real' as ValueBasis)">實質</button>
-          </div>
-        </SliderInput>
-        <SliderInput v-model="monthlyContribution" label="每月投資" :min="0" :max="15" :step="0.05" unit=" 萬">
-          <div class="basis-toggle">
-            <button :class="{ active: (model.monthlyContributionBasis ?? 'real') === 'nominal' }" @click="set('monthlyContributionBasis', 'nominal' as ValueBasis)">名目</button>
-            <button :class="{ active: (model.monthlyContributionBasis ?? 'real') === 'real' }" @click="set('monthlyContributionBasis', 'real' as ValueBasis)">實質</button>
-          </div>
-        </SliderInput>
-      </div>
+      <SliderInput v-model="initialValue" label="初始金額" :min="0" :max="2000" :step="1" unit=" 萬">
+        <div class="basis-toggle">
+          <button :class="{ active: (model.initialValueBasis ?? 'real') === 'nominal' }" @click="set('initialValueBasis', 'nominal' as ValueBasis)">名目</button>
+          <button :class="{ active: (model.initialValueBasis ?? 'real') === 'real' }" @click="set('initialValueBasis', 'real' as ValueBasis)">實質</button>
+        </div>
+      </SliderInput>
+      <SliderInput v-model="monthlyContribution" label="每月投資" :min="0" :max="15" :step="0.05" unit=" 萬">
+        <div class="basis-toggle">
+          <button :class="{ active: (model.monthlyContributionBasis ?? 'real') === 'nominal' }" @click="set('monthlyContributionBasis', 'nominal' as ValueBasis)">名目</button>
+          <button :class="{ active: (model.monthlyContributionBasis ?? 'real') === 'real' }" @click="set('monthlyContributionBasis', 'real' as ValueBasis)">實質</button>
+        </div>
+      </SliderInput>
       <div class="age-sliders">
         <SliderInput v-model="fromAge" label="起始年齡" :min="20" :max="100" :step="1" unit=" 歲" />
         <SliderInput v-model="toAge" label="結束年齡" :min="20" :max="100" :step="1" unit=" 歲" />

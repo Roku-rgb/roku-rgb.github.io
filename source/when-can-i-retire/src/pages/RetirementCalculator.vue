@@ -132,13 +132,13 @@ watch(
           :min="20"
           :max="99"
           :step="1"
-          unit=" 歲" />
+          unit=" 歲(年初)" />
         <SliderInput
           v-model="inputs.currentCash.value"
           label="當前現金"
           :min="0"
           :max="1500"
-          :step="10"
+          :step="1"
           unit=" 萬"
           :format="fmtMoney" />
         <SliderInput
@@ -146,7 +146,7 @@ watch(
           label="每月存款（名目）"
           :min="0"
           :max="10"
-          :step="0.1"
+          :step="0.05"
           unit=" 萬" />
         <SliderInput
           v-model="inputs.rSave.value"
@@ -170,21 +170,21 @@ watch(
           label="每年基本開支（實質購買力）"
           :min="12"
           :max="120"
-          :step="2"
+          :step="1"
           unit=" 萬" />
         <SliderInput
           v-model="inputs.eExtra.value"
           label="每年額外花費（實質購買力）"
           :min="0"
           :max="120"
-          :step="2"
+          :step="1"
           unit=" 萬" />
         <SliderInput
           v-model="inputs.pension.value"
           label="年金收入（實質購買力）"
           :min="0"
           :max="60"
-          :step="2"
+          :step="1"
           unit=" 萬/年" />
         <SliderInput
           v-model="inputs.pensionAge.value"
