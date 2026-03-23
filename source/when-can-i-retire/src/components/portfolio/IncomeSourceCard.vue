@@ -48,7 +48,7 @@ const occurAge = computed({ get: () => model.value.occurAge, set: v => set('occu
       <button class="card-delete" @click="$emit('delete')">×</button>
     </div>
     <div class="card-body">
-      <SliderInput v-model="annualAmount" :label="model.isOneTime ? '金額' : '金額/年'" :min="0" :max="model.isOneTime ? 2000 : 300" :step="1" unit=" 萬">
+      <SliderInput v-model="annualAmount" :label="model.isOneTime ? '金額' : '金額/年'" :min="0" :max="model.isOneTime ? 2000 : 300" :step="0.1" unit=" 萬">
         <div class="basis-toggle">
           <button :class="{ active: model.amountBasis === 'nominal' }" @click="setBasis('amountBasis', 'nominal')">名目</button>
           <button :class="{ active: model.amountBasis === 'real' }" @click="setBasis('amountBasis', 'real')">實質</button>
