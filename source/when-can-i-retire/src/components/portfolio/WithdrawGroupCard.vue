@@ -60,7 +60,7 @@ const toAge = computed({ get: () => model.value.toAge, set: v => set('toAge', v)
           <button :class="{ active: model.rateBasis === 'real' }" @click="set('rateBasis', 'real' as ValueBasis)">實質</button>
         </div>
       </SliderInput>
-      <SliderInput v-model="annualWithdraw" label="每年提領" :min="0" :max="200" :step="1" unit=" 萬">
+      <SliderInput v-model="annualWithdraw" label="每年提領" :min="0" :max="200" :step="0.1" unit=" 萬">
         <div class="basis-toggle">
           <button :class="{ active: model.withdrawBasis === 'nominal' }" @click="set('withdrawBasis', 'nominal' as ValueBasis)">名目</button>
           <button :class="{ active: model.withdrawBasis === 'real' }" @click="set('withdrawBasis', 'real' as ValueBasis)">實質</button>
